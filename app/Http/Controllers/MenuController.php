@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Food;
+use Illuminate\Http\Request;
+
 class MenuController extends Controller
 {
-    public function index() {
-        $foods = [
-            ['name' => 'Pizza', 'price' => 50000],
-            ['name' => 'Hamburger', 'price' => 30000],
-            ['name' => 'Trà sữa', 'price' => 25000],
-        ];
-
+    public function index()
+    {
+        $foods = Food::all();
         return view('menu', compact('foods'));
     }
 }
