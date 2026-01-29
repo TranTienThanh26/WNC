@@ -2,40 +2,65 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Giỏ hàng</title>
+    <title>Giỏ hàng - TTDFood</title>
+    <link rel="stylesheet" href="{{ asset('css/cart.css') }}">
 </head>
 <body>
-<h2>🛒 Giỏ hàng</h2>
+
+<h2 class="cart-title">🛒 Giỏ hàng của bạn</h2>
 
 @if(empty($cart))
-    <p>Giỏ hàng trống</p>
+    <p class="empty-cart">Giỏ hàng trống</p>
 @else
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Tên món</th>
-        <th>Giá</th>
-        <th>Số lượng</th>
-        <th>Thành tiền</th>
-        <th></th>
-    </tr>
-    @php $total = 0; @endphp
-    @foreach($cart as $id => $item)
-        @php $total += $item['price'] * $item['qty']; @endphp
+<table class="cart-table">
+    <thead>
         <tr>
-            <td>{{ $item['name'] }}</td>
-            <td>{{ number_format($item['price']) }}đ</td>
-            <td>{{ $item['qty'] }}</td>
-            <td>{{ number_format($item['price'] * $item['qty']) }}đ</td>
-            <td>
-                <a href="{{ route('cart.remove', $id) }}">Xóa</a>
-            </td>
+            <th>Món ăn</th>
+            <th>Giá</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+            <th></th>
         </tr>
-    @endforeach
+    </thead>
+    <tbody>
+        @php $total = 0; @endphp
+
+        @foreach($cart as $id => $item)
+            @php $sub = $item['price'] * $item['qty']; @endphp
+            @php $total += $sub; @endphp
+
+            <tr>
+                <td>{{ $item['name'] }}</td>
+
+                <td>{{ number_format($item['price']) }}đ</td>
+
+                <!-- ✅ DẤU - 1 + Ở ĐÂY -->
+                <td>
+                    <div class="qty-control">
+                        <a href="{{ route('cart.decrease', $id) }}" class="qty-btn">−</a>
+                        <span class="qty-number">{{ $item['qty'] }}</span>
+                        <a href="{{ route('cart.increase', $id) }}" class="qty-btn">+</a>
+                    </div>
+                </td>
+
+                <td class="price">{{ number_format($sub) }}đ</td>
+
+                <td>
+                    <a href="{{ route('cart.remove', $id) }}" class="remove-btn">✖</a>
+                </td>
+            </tr>
+        @endforeach
+    </tbody>
 </table>
 
-<h3>Tổng tiền: {{ number_format($total) }}đ</h3>
+<div class="cart-total">
+    Tổng tiền: <span>{{ number_format($total) }}đ</span>
+</div>
 
-<a href="{{ route('checkout') }}">➡ Thanh toán</a>
+<div class="cart-actions">
+    <a href="{{ route('menu') }}" class="btn-back">⬅ Tiếp tục đặt món</a>
+    <a href="{{ route('checkout') }}" class="btn-checkout">➡ Thanh toán</a>
+</div>
 @endif
 
 </body>

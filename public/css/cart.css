@@ -1,0 +1,350 @@
+/* ===============================
+   RESET
+================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background: #f6f7f8;
+    color: #333;
+    padding: 30px;
+}
+
+/* ===============================
+   CART PAGE
+================================ */
+.cart-title {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 25px;
+    color: #ff6a00;
+}
+
+.empty-cart {
+    text-align: center;
+    color: #888;
+    font-size: 16px;
+}
+
+/* ===== TABLE ===== */
+.cart-table {
+    width: 100%;
+    background: #fff;
+    border-collapse: collapse;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.cart-table th,
+.cart-table td {
+    padding: 14px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.cart-table th {
+    background: #facc15;
+    font-weight: bold;
+}
+
+/* ===== PRICE ===== */
+.price {
+    color: #ff6a00;
+    font-weight: bold;
+}
+
+/* ===============================
+   QUANTITY (+ -)
+================================ */
+.qty-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #f3f4f6;
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.qty-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #ff6a00;
+    color: #fff;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.25s;
+}
+
+.qty-btn:hover {
+    background: #e85d00;
+    transform: scale(1.05);
+}
+
+.qty-number {
+    min-width: 26px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+/* ===== REMOVE ===== */
+.remove-btn {
+    color: red;
+    font-size: 18px;
+    text-decoration: none;
+}
+
+/* ===============================
+   TOTAL + ACTIONS
+================================ */
+.cart-total {
+    text-align: right;
+    margin-top: 22px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.cart-total span {
+    color: #ff6a00;
+}
+
+.cart-actions {
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.btn-back,
+.btn-checkout {
+    padding: 12px 22px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    text-align: center;
+}
+
+.btn-back {
+    background: #e5e7eb;
+    color: #333;
+}
+
+.btn-checkout {
+    background: #ff6a00;
+    color: #fff;
+}
+
+/* ===============================
+   CHECKOUT PAGE
+================================ */
+.checkout-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkout-box {
+    width: 420px;
+    max-width: 100%;
+    background: #fff;
+    padding: 26px 24px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+.checkout-box h2 {
+    text-align: center;
+    margin-bottom: 22px;
+    color: #ff6a00;
+    font-size: 22px;
+}
+
+/* ===== FORM ===== */
+.checkout-box label {
+    font-weight: 600;
+    margin-top: 14px;
+    display: block;
+    font-size: 14px;
+}
+
+.checkout-box input,
+.checkout-box textarea {
+    width: 100%;
+    padding: 11px 12px;
+    margin-top: 6px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    background: #fafafa;
+    transition: 0.25s;
+}
+
+.checkout-box textarea {
+    resize: none;
+}
+
+.checkout-box input:focus,
+.checkout-box textarea:focus {
+    outline: none;
+    border-color: #ff6a00;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(255,106,0,0.15);
+}
+
+/* ===== BUTTON ===== */
+.checkout-box button {
+    width: 100%;
+    background: linear-gradient(135deg, #ff7a18, #ff6a00);
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 22px;
+    transition: 0.3s;
+}
+
+.checkout-box button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* ===== BACK LINK ===== */
+.back-link {
+    display: block;
+    margin-top: 18px;
+    text-align: center;
+    text-decoration: none;
+    color: #666;
+    font-size: 14px;
+}
+
+.back-link:hover {
+    color: #ff6a00;
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+
+    .cart-actions {
+        flex-direction: column;
+    }
+
+    .btn-back,
+    .btn-checkout {
+        width: 100%;
+    }
+}
+.qr-box {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.qr-box img {
+    width: 220px;
+    border-radius: 12px;
+    border: 2px dashed #ff6a00;
+    padding: 10px;
+    background: #fff;
+}
+.checkout-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+    background: #f5f6fa;
+}
+
+.checkout-box {
+    width: 480px;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.checkout-title {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.checkout-form label {
+    font-weight: 600;
+    margin-top: 12px;
+    display: block;
+}
+
+.checkout-form input,
+.checkout-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.total-box {
+    margin: 18px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+}
+
+.btn-order {
+    width: 100%;
+    background: #27ae60;
+    color: white;
+    padding: 14px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-order:hover {
+    background: #219150;
+}
+
+.qr-box {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px dashed #ddd;
+}
+
+.qr-box img {
+    width: 220px;
+    margin: 15px 0;
+}
+
+.qr-note {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #555;
+}
+
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #555;
+}

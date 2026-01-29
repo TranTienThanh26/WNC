@@ -31,14 +31,7 @@ body {
     color: #facc15;
 }
 
-.search-box input {
-    width: 360px;
-    padding: 10px 16px;
-    border-radius: 999px;
-    border: none;
-    outline: none;
-    font-size: 14px;
-}
+
 
 .btn-login {
     background-color: #facc15;
@@ -47,6 +40,39 @@ body {
     border-radius: 999px;
     text-decoration: none;
     font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+/* ===== USER BOX ===== */
+.user-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 14px;
+}
+
+.user-box span {
+    font-weight: 600;
+    color: #111827;
+}
+
+.user-box a.btn-login {
+    background: #22c55e;
+    color: #fff;
+}
+
+.user-box a.btn-login:hover {
+    background: #16a34a;
+}
+
+.user-box form button {
+    background: #ef4444;
+    color: #fff;
+}
+
+.user-box form button:hover {
+    background: #dc2626;
 }
 
 /* ===== HERO ===== */
@@ -86,7 +112,7 @@ body {
     cursor: pointer;
 }
 
-/* ===== SECTION WRAPPER ===== */
+/* ===== SECTION ===== */
 .section {
     padding: 60px 64px;
     background: #fff;
@@ -116,6 +142,8 @@ body {
     overflow: hidden;
     box-shadow: 0 6px 24px rgba(0,0,0,0.08);
     transition: 0.25s;
+    text-decoration: none;
+    color: inherit;
 }
 
 .menu-item:hover {
@@ -136,116 +164,7 @@ body {
     text-align: center;
 }
 
-/* ===== RESTAURANT LIST (beFood style) ===== */
-.restaurant-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-}
-
-.restaurant-card {
-    background: #fff;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-}
-
-.restaurant-card img {
-    width: 100%;
-    height: 160px;
-    object-fit: cover;
-}
-
-.restaurant-info {
-    padding: 14px;
-}
-
-.restaurant-info h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.restaurant-info p {
-    font-size: 14px;
-    color: #6b7280;
-}
-
-/* ===== APP DOWNLOAD ===== */
-.app-download {
-    background: #facc15;
-    padding: 60px 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.app-download h2 {
-    font-size: 28px;
-    font-weight: 800;
-}
-
-.app-download p {
-    margin-top: 8px;
-    font-size: 16px;
-}
-
-/* ===== FOOTER ===== */
-.footer {
-    background: #111827;
-    color: #d1d5db;
-    padding: 50px 64px;
-}
-
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 32px;
-}
-
-.footer h4 {
-    color: #fff;
-    margin-bottom: 12px;
-}
-
-.footer p, .footer a {
-    font-size: 14px;
-    color: #d1d5db;
-    text-decoration: none;
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1024px) {
-    .menu-grid,
-    .restaurant-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .menu-grid,
-    .restaurant-grid,
-    .footer-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .search-box input {
-        width: 220px;
-    }
-}
-
-@media (max-width: 480px) {
-    .menu-grid,
-    .restaurant-grid,
-    .footer-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .address-box input {
-        width: 220px;
-    }
-}
-/* ===== FOOD MENU ===== */
+/* ===== FOOD GRID ===== */
 .food-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -268,6 +187,10 @@ body {
     width: 100%;
     height: 180px;
     object-fit: cover;
+}
+
+.food-card:hover img {
+    filter: brightness(0.95);
 }
 
 .food-info {
@@ -309,4 +232,113 @@ body {
 
 .btn-add:hover {
     background: #e85d00;
+}
+
+/* ===== APP DOWNLOAD ===== */
+.app-download {
+    background: #facc15;
+    padding: 60px 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-download h2 {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.app-download p {
+    margin-top: 8px;
+    font-size: 16px;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    background: #111827;
+    color: #d1d5db;
+    padding: 50px 64px;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+}
+
+.footer h4 {
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.footer p {
+    font-size: 14px;
+    color: #d1d5db;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .menu-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .menu-grid,
+    .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .search-box input {
+        width: 220px;
+    }
+
+    .user-box span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-grid,
+    .footer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .address-box input {
+        width: 220px;
+    }
+}
+
+
+/* ===== SEARCH BOX FINAL - FIX DỨT ĐIỂM ===== */
+
+.header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+}
+
+.search-box {
+    flex: 1;
+    max-width: 360px;
+    margin: 0 24px;
+    position: relative;
+    z-index: 50;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 2px solid #facc15;
+    outline: none;
+    font-size: 14px;
+    background: #fff;
+    color: #000;
+    pointer-events: auto !important;
+}
+
+.search-box input:focus {
+    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.4);
 }

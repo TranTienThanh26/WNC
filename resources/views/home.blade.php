@@ -15,11 +15,16 @@
         </a>
     </div>
 
+    <!-- SEARCH -->
     <div class="search-box">
-        <input type="text" placeholder="Tìm món ăn hoặc nhà hàng">
+        <input
+            type="text"
+            id="searchFood"
+            placeholder="🔍 Tìm món ăn..."
+            autocomplete="off"
+        >
     </div>
 
-    {{-- 🔐 LOGIN / LOGOUT --}}
     @auth
         <div class="user-box">
             <span>👋 Xin chào, {{ auth()->user()->name }}</span>
@@ -51,7 +56,7 @@
 <section class="menu">
     <h2>Bộ sưu tập món ăn</h2>
 
-    <div class="menu-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="menu-grid">
         <a href="{{ route('menu') }}" class="menu-item">
             <img src="https://source.unsplash.com/400x300/?drink">
             <p>Đồ uống</p>
@@ -74,59 +79,59 @@
     </div>
 </section>
 
-<!-- ===== FEATURED FOOD ===== -->
+<!-- ===== FEATURED FOOD (DATABASE) ===== -->
 <section class="section">
-    <h2 class="section-title">Quán ngon quanh đây</h2>
+    <h2 class="section-title">Món ngon hôm nay</h2>
 
-    <div class="food-grid">
-        <div class="food-card">
-            <img src="https://source.unsplash.com/400x300/?burger">
-            <div class="food-info">
-                <h3>Burger Bò Phô Mai</h3>
-                <p class="food-desc">Bán chạy • Được yêu thích</p>
-                <div class="food-bottom">
-                    <span class="price">45.000 đ</span>
-                    <a href="{{ route('menu') }}" class="btn-add">Đặt món</a>
+    @if($foods->count() == 0)
+        <p>Chưa có món ăn nào trong hệ thống</p>
+    @else
+        <div class="food-grid">
+            @foreach($foods as $food)
+                <div class="food-card">
+
+                    <a href="{{ route('food.show', $food->id) }}">
+                        <img
+                            src="{{ $food->image
+                                ? asset('storage/'.$food->image)
+                                : 'https://source.unsplash.com/400x300/?food'
+                            }}"
+                            alt="{{ $food->name }}"
+                        >
+                    </a>
+
+                    <div class="food-info">
+                        <h3>{{ $food->name }}</h3>
+
+                        <p class="food-desc">
+                            {{ $food->description ?? 'Món ăn hấp dẫn – phục vụ nóng hổi' }}
+                        </p>
+
+                        <div class="food-bottom">
+                            <span class="price">
+                                {{ number_format($food->price) }} đ
+                            </span>
+
+                            <form action="{{ route('cart.add', $food->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn-add">➕ Đặt món</button>
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
+            @endforeach
         </div>
 
-        <div class="food-card">
-            <img src="https://source.unsplash.com/400x300/?pizza">
-            <div class="food-info">
-                <h3>Pizza Hải Sản</h3>
-                <p class="food-desc">Món nổi bật hôm nay</p>
-                <div class="food-bottom">
-                    <span class="price">85.000 đ</span>
-                    <a href="{{ route('menu') }}" class="btn-add">Đặt món</a>
-                </div>
+        {{-- NÚT XEM THÊM --}}
+        @if($totalFoods > $foods->count())
+            <div style="text-align:center; margin-top:30px;">
+                <a href="{{ route('menu') }}" class="btn-login">
+                    👀 Xem thêm món ăn
+                </a>
             </div>
-        </div>
-
-        <div class="food-card">
-            <img src="https://source.unsplash.com/400x300/?fried-rice">
-            <div class="food-info">
-                <h3>Cơm Chiên Hải Sản</h3>
-                <p class="food-desc">Giao nhanh • Nóng hổi</p>
-                <div class="food-bottom">
-                    <span class="price">40.000 đ</span>
-                    <a href="{{ route('menu') }}" class="btn-add">Đặt món</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="food-card">
-            <img src="https://source.unsplash.com/400x300/?milk-tea">
-            <div class="food-info">
-                <h3>Trà Sữa Trân Châu</h3>
-                <p class="food-desc">Yêu thích giới trẻ</p>
-                <div class="food-bottom">
-                    <span class="price">30.000 đ</span>
-                    <a href="{{ route('menu') }}" class="btn-add">Đặt món</a>
-                </div>
-            </div>
-        </div>
-    </div>
+        @endif
+    @endif
 </section>
 
 <!-- ===== APP DOWNLOAD ===== -->

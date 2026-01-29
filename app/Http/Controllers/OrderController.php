@@ -8,25 +8,36 @@ use App\Models\OrderItem;
 
 class OrderController extends Controller
 {
-    // Hiển thị trang checkout
+    // ===============================
+    // 1️⃣ TRANG CHECKOUT
+    // ===============================
     public function checkout()
     {
         $cart = session('cart', []);
+
+        if (empty($cart)) {
+            return redirect()->route('cart')
+                ->with('error', 'Giỏ hàng trống');
+        }
+
         return view('checkout', compact('cart'));
     }
 
-    // Lưu đơn hàng
+    // ===============================
+    // 2️⃣ LƯU ĐƠN HÀNG
+    // ===============================
     public function store(Request $request)
     {
         // ✅ Validate
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'address'       => 'required|string|max:255',
+            'phone'         => 'nullable|string|max:20',
         ]);
 
-        $cart = session('cart');
+        $cart = session('cart', []);
 
-        if (!$cart || count($cart) == 0) {
+        if (count($cart) == 0) {
             return redirect()->route('cart')
                 ->with('error', 'Giỏ hàng trống');
         }
@@ -37,13 +48,14 @@ class OrderController extends Controller
             $total += $item['price'] * $item['qty'];
         }
 
-        // ✅ Tạo đơn hàng (ĐÚNG DB)
+        // ✅ Tạo đơn hàng
         $order = Order::create([
             'user_id'       => auth()->id(),
             'customer_name' => $request->customer_name,
+            'phone'         => $request->phone,
             'address'       => $request->address,
-            'total_price'   => $total,   // ✅ SỬA Ở ĐÂY
-            'status'        => 'pending',
+            'total_price'   => $total,
+            'status'        => 'Chờ thanh toán',
         ]);
 
         // ✅ Lưu chi tiết đơn hàng
@@ -59,11 +71,14 @@ class OrderController extends Controller
         // ✅ Xóa giỏ hàng
         session()->forget('cart');
 
+        // ✅ CÁCH 1: Quay về danh sách đơn hàng
         return redirect()->route('orders')
-            ->with('success', 'Đặt hàng thành công');
+            ->with('success', '🎉 Đặt hàng thành công! Vui lòng thanh toán.');
     }
 
-    // Danh sách đơn hàng
+    // ===============================
+    // 3️⃣ DANH SÁCH ĐƠN HÀNG
+    // ===============================
     public function index()
     {
         $orders = Order::where('user_id', auth()->id())
@@ -71,5 +86,23 @@ class OrderController extends Controller
             ->get();
 
         return view('orders', compact('orders'));
+    }
+
+    // ===============================
+    // 4️⃣ CHI TIẾT ĐƠN HÀNG
+    // ===============================
+    public function show($id)
+    {
+        // 🔒 Chỉ xem đơn của chính mình
+        $order = Order::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        // 🧾 Lấy danh sách món
+        $items = OrderItem::where('order_id', $order->id)
+            ->with('food') // cần relation food()
+            ->get();
+
+        return view('order_detail', compact('order', 'items'));
     }
 }

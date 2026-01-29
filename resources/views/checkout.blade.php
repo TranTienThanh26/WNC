@@ -3,64 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <title>Thanh toán - TTDFood</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f7f7f7;
-        }
-        .checkout-box {
-            width: 400px;
-            margin: 50px auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        input, textarea, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 6px;
-        }
-        button {
-            background: #ff6b00;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        a {
-            display: block;
-            margin-top: 15px;
-            text-align: center;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/cart.css') }}">
 </head>
 <body>
 
-<div class="checkout-box">
-    <h2>💳 Thanh toán</h2>
+<div class="checkout-wrapper">
+    <div class="checkout-box">
 
-    <form action="{{ route('order.store') }}" method="POST">
-        @csrf
+        <h2 class="checkout-title">💳 Thanh toán đơn hàng</h2>
 
-        <!-- TÊN KHÁCH (QUAN TRỌNG) -->
-        <label>Họ tên</label>
-        <input type="text" name="customer_name" required>
+        {{-- FORM ĐẶT HÀNG --}}
+        <form action="{{ route('order.store') }}" method="POST" class="checkout-form">
+            @csrf
 
-        <!-- SỐ ĐIỆN THOẠI (nếu có cột thì dùng, không có thì vẫn ok) -->
-        <label>Số điện thoại</label>
-        <input type="text" name="phone">
+            <label>Họ tên</label>
+            <input type="text" name="customer_name" placeholder="Nhập họ tên" required>
 
-        <!-- ĐỊA CHỈ -->
-        <label>Địa chỉ giao hàng</label>
-        <textarea name="address" rows="3" required></textarea>
+            <label>Số điện thoại</label>
+            <input type="text" name="phone" placeholder="Nhập số điện thoại">
 
-        <button type="submit">✅ Xác nhận đặt hàng</button>
-    </form>
+            <label>Địa chỉ giao hàng</label>
+            <textarea name="address" rows="3" placeholder="Nhập địa chỉ giao hàng" required></textarea>
 
-    <a href="{{ route('cart') }}">⬅ Quay lại giỏ hàng</a>
+            {{-- TỔNG TIỀN --}}
+            <div class="total-box">
+                <span>Tổng thanh toán:</span>
+                <strong>
+                    {{ number_format(collect($cart)->sum(fn($i) => $i['price'] * $i['qty'])) }} đ
+                </strong>
+            </div>
+
+            <button type="submit" class="btn-order">
+                ✅ Xác nhận đặt hàng
+            </button>
+        </form>
+
+        {{-- QR THANH TOÁN --}}
+        <div class="qr-box">
+            <h3>📱 Quét QR để thanh toán</h3>
+
+            <img src="{{ asset('images/qr.png') }}" alt="QR thanh toán">
+
+            <p><strong>Ngân hàng:</strong> Vietcombank</p>
+            <p><strong>STK:</strong> 0123456789</p>
+            <p><strong>Chủ TK:</strong> TTDFOOD</p>
+            <p class="qr-note">
+                💡 Nội dung CK: <b>TTDFOOD + SĐT</b>
+            </p>
+        </div>
+
+        <a href="{{ route('cart') }}" class="back-link">
+            ⬅ Quay lại giỏ hàng
+        </a>
+
+    </div>
 </div>
 
 </body>
