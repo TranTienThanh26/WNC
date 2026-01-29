@@ -16,6 +16,7 @@ class MenuController extends Controller
     public function index()
     {
         $foods = Food::orderBy('id', 'desc')->get();
+
         return view('menu', compact('foods'));
     }
 
@@ -38,27 +39,22 @@ class MenuController extends Controller
 
     /**
      * ===============================
-     * 3️⃣ TÌM MÓN ĂN (GÕ CHỮ LÀ RA)
+     * 3️⃣ TÌM MÓN ĂN (ENTER → SANG MENU)
      * ===============================
-     * URL: /search-food?q=ga
+     * URL: /search-food?keyword=ga
      */
     public function search(Request $request)
     {
-        $keyword = $request->q;
+        $keyword = $request->keyword; // ✅ ĐÚNG TÊN
 
-        if (!$keyword) {
-            return response()->json([]);
-        }
+    if (!$keyword) {
+        return redirect()->route('menu');
+    }
 
-        $foods = Food::where('name', 'LIKE', '%' . $keyword . '%')
-            ->limit(10)
-            ->get([
-                'id',
-                'name',
-                'price',
-                'image'
-            ]);
+    $foods = Food::where('name', 'LIKE', '%' . $keyword . '%')
+        ->orderBy('id', 'desc')
+        ->get();
 
-        return response()->json($foods);
+    return view('menu', compact('foods'));
     }
 }

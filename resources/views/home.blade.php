@@ -16,14 +16,17 @@
     </div>
 
     <!-- SEARCH -->
-    <div class="search-box">
+<div class="search-box">
+    <form action="{{ route('search.food') }}" method="GET">
+
         <input
             type="text"
-            id="searchFood"
+            name="keyword"
             placeholder="🔍 Tìm món ăn..."
-            autocomplete="off"
+            value="{{ request('keyword') }}"
         >
-    </div>
+    </form>
+</div>
 
     @auth
         <div class="user-box">

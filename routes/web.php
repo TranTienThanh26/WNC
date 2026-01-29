@@ -38,6 +38,14 @@ Route::middleware('auth')->group(function () {
     // ---------- MENU ----------
     Route::get('/menu', [MenuController::class, 'index'])->name('menu');
 
+    // ---------- MENU THEO LOẠI ----------
+    Route::get('/menu/{category}', [MenuController::class, 'category'])
+        ->name('menu.category');
+
+    // ---------- SEARCH (ENTER TÌM KIẾM) ----------
+    Route::get('/search-food', [MenuController::class, 'search'])
+        ->name('search.food');
+
     // ---------- CHI TIẾT MÓN ----------
     Route::get('/food/{id}', [FoodController::class, 'show'])
         ->name('food.show');
@@ -56,54 +64,44 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/cart/remove/{id}', [CartController::class, 'remove'])
         ->name('cart.remove');
-// ĐẶT MÓN NGAY (thêm vào giỏ + sang cart)
-Route::post('/order-now/{id}', function ($id) {
-    $cart = session()->get('cart', []);
 
-    if (isset($cart[$id])) {
-        $cart[$id]['quantity']++;
-    } else {
-        $food = \App\Models\Food::findOrFail($id);
-        $cart[$id] = [
-            'name' => $food->name,
-            'price' => $food->price,
-            'quantity' => 1,
-            'image' => $food->image
-        ];
-    }
+    // ---------- ĐẶT MÓN NGAY ----------
+    Route::post('/order-now/{id}', function ($id) {
+        $cart = session()->get('cart', []);
 
-    session()->put('cart', $cart);
+        if (isset($cart[$id])) {
+            $cart[$id]['quantity']++;
+        } else {
+            $food = \App\Models\Food::findOrFail($id);
+            $cart[$id] = [
+                'name' => $food->name,
+                'price' => $food->price,
+                'quantity' => 1,
+                'image' => $food->image
+            ];
+        }
 
-    return redirect()->route('cart');
-})->name('order.now');
+        session()->put('cart', $cart);
+
+        return redirect()->route('checkout');
+    })->name('order.now');
 
     // ================== ORDER ==================
-    // Checkout
     Route::get('/checkout', [OrderController::class, 'checkout'])
         ->name('checkout');
 
-    // Lưu đơn hàng
     Route::post('/order', [OrderController::class, 'store'])
         ->name('order.store');
 
-    // Danh sách đơn hàng
     Route::get('/orders', [OrderController::class, 'index'])
         ->name('orders');
 
-    // Chi tiết đơn hàng
     Route::get('/orders/{id}', [OrderController::class, 'show'])
         ->name('orders.show');
 });
 
 // ================== ADMIN ==================
 Route::middleware(['auth', 'admin'])->group(function () {
-
     Route::get('/admin', [AdminController::class, 'index'])
         ->name('admin.dashboard');
-
 });
-Route::get('/search-food', [MenuController::class, 'search'])
-    ->name('food.search');
-// route lọc theo loại
-Route::get('/menu/{category}', [MenuController::class, 'category'])
-    ->name('menu.category');
