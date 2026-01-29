@@ -167,16 +167,15 @@ body {
 /* ===== FOOD GRID ===== */
 .food-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(4, 1fr); /* 1 DÒNG 4 MÓN */
     gap: 20px;
 }
 
 .food-card {
     background: #fff;
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    transition: transform 0.3s;
 }
 
 .food-card:hover {
@@ -194,7 +193,7 @@ body {
 }
 
 .food-info {
-    padding: 14px;
+    padding: 12px;
 }
 
 .food-info h3 {
@@ -209,9 +208,10 @@ body {
 }
 
 .food-bottom {
+    margin-top: 10px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .price {
@@ -221,19 +221,22 @@ body {
 }
 
 .btn-add {
-    background: #ff6a00;
-    color: #fff;
+    font-size: 13px;          /* 👈 GIẢM CỠ CHỮ */
+    padding: 6px 8px;
+    border-radius: 6px;
     border: none;
-    padding: 8px 14px;
-    border-radius: 20px;
     cursor: pointer;
-    font-size: 13px;
+    background: #22c55e;
+    color: white;
+    transition: 0.2s;
 }
-
 .btn-add:hover {
-    background: #e85d00;
+    opacity: 0.85;
 }
-
+/* NÚT ĐẶT MÓN */
+.btn-add.order-now {
+    background: #ff6f00;
+}
 /* ===== APP DOWNLOAD ===== */
 .app-download {
     background: #facc15;

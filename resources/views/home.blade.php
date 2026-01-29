@@ -79,7 +79,7 @@
     </div>
 </section>
 
-<!-- ===== FEATURED FOOD (DATABASE) ===== -->
+<!-- ===== FEATURED FOOD ===== -->
 <section class="section">
     <h2 class="section-title">Món ngon hôm nay</h2>
 
@@ -107,14 +107,26 @@
                             {{ $food->description ?? 'Món ăn hấp dẫn – phục vụ nóng hổi' }}
                         </p>
 
+                        <!-- ===== GIÁ + NÚT ===== -->
                         <div class="food-bottom">
                             <span class="price">
                                 {{ number_format($food->price) }} đ
                             </span>
 
+                            <!-- THÊM VÀO GIỎ -->
+                            <form action="{{ route('cart.add', $food->id) }}" method="POST" style="margin-bottom:6px;">
+                                @csrf
+                                <button type="submit" class="btn-add">
+                                    🛒 Thêm vào giỏ hàng
+                                </button>
+                            </form>
+
+                            <!-- ĐẶT MÓN -->
                             <form action="{{ route('cart.add', $food->id) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="btn-add">➕ Đặt món</button>
+                                <button type="submit" class="btn-add" style="background:#ff6f00;">
+                                    ⚡ Đặt món
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -123,7 +135,7 @@
             @endforeach
         </div>
 
-        {{-- NÚT XEM THÊM --}}
+        <!-- XEM THÊM -->
         @if($totalFoods > $foods->count())
             <div style="text-align:center; margin-top:30px;">
                 <a href="{{ route('menu') }}" class="btn-login">

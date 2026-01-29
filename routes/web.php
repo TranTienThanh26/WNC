@@ -56,6 +56,26 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/cart/remove/{id}', [CartController::class, 'remove'])
         ->name('cart.remove');
+// ĐẶT MÓN NGAY (thêm vào giỏ + sang cart)
+Route::post('/order-now/{id}', function ($id) {
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$id])) {
+        $cart[$id]['quantity']++;
+    } else {
+        $food = \App\Models\Food::findOrFail($id);
+        $cart[$id] = [
+            'name' => $food->name,
+            'price' => $food->price,
+            'quantity' => 1,
+            'image' => $food->image
+        ];
+    }
+
+    session()->put('cart', $cart);
+
+    return redirect()->route('cart');
+})->name('order.now');
 
     // ================== ORDER ==================
     // Checkout
