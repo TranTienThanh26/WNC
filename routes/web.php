@@ -101,7 +101,19 @@ Route::middleware('auth')->group(function () {
 });
 
 // ================== ADMIN ==================
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])
-        ->name('admin.dashboard');
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // 🏠 Dashboard
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+
+    // 🍔 Quản lý món ăn
+    Route::get('/foods', [AdminController::class, 'foodIndex'])->name('foods.index');
+    Route::get('/foods/create', [AdminController::class, 'foodCreate'])->name('foods.create');
+    Route::post('/foods', [AdminController::class, 'foodStore'])->name('foods.store');
+    Route::get('/foods/{id}/edit', [AdminController::class, 'foodEdit'])->name('foods.edit');
+    Route::post('/foods/{id}', [AdminController::class, 'foodUpdate'])->name('foods.update');
+    Route::post('/foods/{id}/delete', [AdminController::class, 'foodDelete'])->name('foods.delete');
+
+    // 📦 Quản lý đơn hàng
+    Route::get('/orders', [AdminController::class, 'orderIndex'])->name('orders.index');
+    Route::post('/orders/{id}/status', [AdminController::class, 'orderUpdateStatus'])->name('orders.status');
 });

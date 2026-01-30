@@ -1,34 +1,85 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="{{ asset('css/home.css') }}">
-</head>
-<body>
+@extends('admin.layout')
 
-<header class="header">
-    <div class="logo">ADMIN</div>
+@section('title', 'Tổng quan')
 
-    <form method="POST" action="/logout">
-        @csrf
-        <button class="btn-login">Đăng xuất</button>
-    </form>
-</header>
+@section('content')
+    <div class="card-grid">
+        <!-- CARD 1 -->
+        <div class="card">
+            <div class="card-icon bg-blue">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <div class="card-info">
+                <h3>{{ $totalOrders }}</h3>
+                <p>Tổng đơn hàng</p>
+            </div>
+        </div>
 
-<section class="section">
-    <h2 class="section-title">
-        Xin chào {{ auth()->user()->name }} 👑
-    </h2>
+        <!-- CARD 2 -->
+        <div class="card">
+            <div class="card-icon bg-green">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="card-info">
+                <h3>{{ number_format($revenue) }} đ</h3>
+                <p>Doanh thu</p>
+            </div>
+        </div>
 
-    <p>Chào mừng bạn đến trang quản trị TTDFood</p>
+        <!-- CARD 3 -->
+        <div class="card">
+            <div class="card-icon bg-orange">
+                <i class="fas fa-utensils"></i>
+            </div>
+            <div class="card-info">
+                <h3>{{ $totalFoods }}</h3>
+                <p>Món ăn đang bán</p>
+            </div>
+        </div>
 
-    <ul style="margin-top:20px;">
-        <li>✔ Quản lý món ăn</li>
-        <li>✔ Quản lý người dùng</li>
-        <li>✔ Xem đơn hàng</li>
-    </ul>
-</section>
+        <!-- CARD 4 -->
+        <div class="card">
+            <div class="card-icon bg-red">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="card-info">
+                <h3>{{ $totalUsers }}</h3>
+                <p>Khách hàng thành viên</p>
+            </div>
+        </div>
+    </div>
 
-</body>
-</html>
+    <h3 style="margin-top: 30px; margin-bottom: 15px;">Món ăn mới thêm</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tên món</th>
+                    <th>Giá</th>
+                    <th>Danh mục</th>
+                    <th>Ngày thêm</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($newFoods as $food)
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            @if($food->image)
+                                <img src="{{ asset('storage/'.$food->image) }}" width="40" height="40" style="border-radius:5px; object-fit:cover;">
+                            @endif
+                            {{ $food->name }}
+                        </div>
+                    </td>
+                    <td>{{ number_format($food->price) }} đ</td>
+                    <td>{{ $food->category }}</td>
+                    <td>{{ $food->created_at->format('d/m/Y') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+@endsection
