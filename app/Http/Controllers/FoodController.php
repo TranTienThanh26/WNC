@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class FoodController extends Controller
 {
     /* =========================
-     * 1. DANH SÁCH MÓN (MENU)
+     * 1. DANH SÁCH MÓN (TẤT CẢ)
      * ========================= */
     public function index()
     {
@@ -17,7 +17,20 @@ class FoodController extends Controller
     }
 
     /* =========================
-     * 2. FORM THÊM MÓN
+     * 2. LỌC MÓN THEO CATEGORY
+     * drink | fastfood | rice
+     * ========================= */
+    public function category($category)
+    {
+        $foods = Food::where('category', $category)
+                     ->latest()
+                     ->paginate(12);
+
+        return view('menu', compact('foods'));
+    }
+
+    /* =========================
+     * 3. FORM THÊM MÓN (ADMIN)
      * ========================= */
     public function create()
     {
@@ -25,18 +38,19 @@ class FoodController extends Controller
     }
 
     /* =========================
-     * 3. LƯU MÓN + ẢNH
+     * 4. LƯU MÓN + ẢNH + CATEGORY
      * ========================= */
     public function store(Request $request)
     {
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'price'       => 'required|numeric',
+            'category'    => 'required|in:drink,fastfood,rice',
             'description' => 'nullable|string',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // upload ảnh
+        // Upload ảnh
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('foods', 'public');
         }
@@ -48,7 +62,7 @@ class FoodController extends Controller
     }
 
     /* =========================
-     * 4. TRANG CHI TIẾT MÓN ĂN
+     * 5. CHI TIẾT MÓN
      * ========================= */
     public function show($id)
     {
@@ -57,7 +71,7 @@ class FoodController extends Controller
     }
 
     /* =========================
-     * 5. FORM SỬA MÓN
+     * 6. FORM SỬA MÓN
      * ========================= */
     public function edit($id)
     {
@@ -66,7 +80,7 @@ class FoodController extends Controller
     }
 
     /* =========================
-     * 6. CẬP NHẬT MÓN + ẢNH
+     * 7. CẬP NHẬT MÓN + ẢNH
      * ========================= */
     public function update(Request $request, $id)
     {
@@ -75,11 +89,12 @@ class FoodController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'price'       => 'required|numeric',
+            'category'    => 'required|in:drink,fastfood,rice',
             'description' => 'nullable|string',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // nếu có ảnh mới → thay ảnh
+        // Nếu có ảnh mới → thay ảnh
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('foods', 'public');
         }
@@ -91,7 +106,7 @@ class FoodController extends Controller
     }
 
     /* =========================
-     * 7. XÓA MÓN
+     * 8. XÓA MÓN
      * ========================= */
     public function destroy($id)
     {

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Food;
 use Illuminate\Http\Request;
 
@@ -10,87 +12,89 @@ class CartController extends Controller
     // 🛒 Xem giỏ hàng
     public function index()
     {
-        $cart = session()->get('cart', []);
-        return view('cart', compact('cart'));
+        $cart = Cart::with('items.food')
+        ->where('user_id', auth()->id())
+        ->first();
+
+    return view('cart', compact('cart'));
     }
 
-    // ➕ Thêm món vào giỏ (từ trang chi tiết – có số lượng)
+    // ➕ Thêm món vào giỏ
     public function add(Request $request, $id)
     {
         $food = Food::findOrFail($id);
-        $qty  = (int) ($request->qty ?? 1);
+        $qty = (int) ($request->qty ?? 1);
+        if ($qty < 1) $qty = 1;
 
-        if ($qty < 1) {
-            $qty = 1;
-        }
+        // Lấy hoặc tạo cart cho user
+        $cart = Cart::firstOrCreate([
+            'user_id' => auth()->id()
+        ]);
 
-        $cart = session()->get('cart', []);
+        // Kiểm tra món đã tồn tại chưa
+        $item = CartItem::where('cart_id', $cart->id)
+            ->where('food_id', $food->id)
+            ->first();
 
-        if (isset($cart[$id])) {
-            $cart[$id]['qty'] += $qty;
+        if ($item) {
+            $item->quantity += $qty;
+            $item->save();
         } else {
-            $cart[$id] = [
-                'id'    => $food->id,
-                'name'  => $food->name,
-                'price' => $food->price,
-                'qty'   => $qty
-            ];
+            CartItem::create([
+                'cart_id' => $cart->id,
+                'food_id' => $food->id,
+                'quantity' => $qty,
+                'price' => $food->price
+            ]);
         }
 
-        session()->put('cart', $cart);
+        if ($request->has('redirect') && $request->redirect == 'checkout') {
+            return redirect()->route('checkout');
+        }
 
         return redirect()->route('cart')
             ->with('success', 'Đã thêm món vào giỏ hàng');
     }
 
-    // ➕ Tăng số lượng (trong giỏ hàng)
+    // ➕ Tăng số lượng
     public function increase($id)
     {
-        $cart = session()->get('cart', []);
+        $item = CartItem::findOrFail($id);
+        $item->increment('quantity');
 
-        if (isset($cart[$id])) {
-            $cart[$id]['qty']++;
-            session()->put('cart', $cart);
-        }
-
-        return redirect()->back();
+        return back();
     }
 
-    // ➖ Giảm số lượng (trong giỏ hàng)
+    // ➖ Giảm số lượng
     public function decrease($id)
     {
-        $cart = session()->get('cart', []);
+        $item = CartItem::findOrFail($id);
 
-        if (isset($cart[$id])) {
-            $cart[$id]['qty']--;
-
-            if ($cart[$id]['qty'] <= 0) {
-                unset($cart[$id]);
-            }
-
-            session()->put('cart', $cart);
+        if ($item->quantity > 1) {
+            $item->decrement('quantity');
+        } else {
+            $item->delete();
         }
 
-        return redirect()->back();
+        return back();
     }
 
-    // ❌ Xóa món khỏi giỏ
+    // ❌ Xóa món
     public function remove($id)
     {
-        $cart = session()->get('cart', []);
-
-        if (isset($cart[$id])) {
-            unset($cart[$id]);
-            session()->put('cart', $cart);
-        }
-
-        return redirect()->back();
+        CartItem::findOrFail($id)->delete();
+        return back();
     }
 
-    // 🧹 Xóa toàn bộ giỏ hàng (dùng sau checkout)
+    // 🧹 Xóa toàn bộ giỏ
     public function clear()
     {
-        session()->forget('cart');
+        $cart = Cart::where('user_id', auth()->id())->first();
+
+        if ($cart) {
+            $cart->items()->delete();
+        }
+
         return redirect()->route('cart');
     }
 }

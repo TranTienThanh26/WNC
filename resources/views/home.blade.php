@@ -32,6 +32,7 @@
         <div class="user-box">
             <span>👋 Xin chào, {{ auth()->user()->name }}</span>
 
+            <a href="{{ route('orders') }}" class="btn-login">📦 Đơn hàng của bạn</a>
             <a href="{{ route('cart') }}" class="btn-login">🛒 Giỏ hàng</a>
 
             <form action="{{ route('logout') }}" method="POST" style="display:inline;">
@@ -50,32 +51,83 @@
 <section class="hero">
     <h2>Địa chỉ bạn muốn giao món</h2>
     <div class="address-box">
-        <input type="text" placeholder="Nhập địa chỉ của bạn">
-        <button>📍</button>
+        <form action="{{ route('home') }}" method="GET" style="display: flex; width: 100%;" id="addressForm">
+            <input type="text" name="address" id="addressInput" placeholder="Nhập địa chỉ của bạn (Ví dụ: Cầu Giấy...)" value="{{ request('address') }}">
+            <button type="button" onclick="getLocation()" title="Lấy vị trí hiện tại" style="background: #dc3545; margin-left: 5px;">📍</button>
+            <button type="submit" style="margin-left: 5px;">Tìm</button>
+        </form>
     </div>
+    <p id="geoStatus" style="color: white; margin-top: 10px; display: none;"></p>
 </section>
+
+<script>
+    function getLocation() {
+        const status = document.getElementById('geoStatus');
+        const input = document.getElementById('addressInput');
+        
+        if (!navigator.geolocation) {
+            alert('Trình duyệt của bạn không hỗ trợ định vị.');
+            return;
+        }
+
+        status.style.display = 'block';
+        status.textContent = 'Đang lấy vị trí...';
+        
+        navigator.geolocation.getCurrentPosition(success, error);
+
+        function success(position) {
+            const latitude  = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // Gọi API miễn phí để lấy địa chỉ từ toạ độ (Reverse Geocoding)
+            // Sử dụng OpenStreetMap Nominatim API
+            status.textContent = 'Đang tìm địa chỉ...';
+            
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data && data.display_name) {
+                         // Lấy quận/huyện hoặc tên đường ngắn gọn hơn nếu muốn, ở đây lấy full
+                         // Để ngắn gọn hơn ta có thể split lấy phần đầu
+                        input.value = data.display_name;
+                        status.style.display = 'none';
+                    } else {
+                        status.textContent = 'Không tìm thấy địa chỉ.';
+                    }
+                })
+                .catch(err => {
+                    status.textContent = 'Lỗi khi lấy địa chỉ.';
+                    console.error(err);
+                });
+        }
+
+        function error() {
+            status.textContent = 'Không thể lấy vị trí của bạn.';
+        }
+    }
+</script>
 
 <!-- ===== CATEGORY ===== -->
 <section class="menu">
     <h2>Bộ sưu tập món ăn</h2>
 
     <div class="menu-grid">
-        <a href="{{ route('menu') }}" class="menu-item">
+        <a href="{{ route('menu.category', 'Đồ uống') }}" class="menu-item">
             <img src="https://source.unsplash.com/400x300/?drink">
             <p>Đồ uống</p>
         </a>
 
-        <a href="{{ route('menu') }}" class="menu-item">
+        <a href="{{ route('menu.category', 'Fast Food') }}" class="menu-item">
             <img src="https://source.unsplash.com/400x300/?fastfood">
             <p>Thức ăn nhanh</p>
         </a>
 
-        <a href="{{ route('menu') }}" class="menu-item">
+        <a href="{{ route('menu.category', 'Món chính') }}" class="menu-item">
             <img src="https://source.unsplash.com/400x300/?rice">
             <p>Cơm</p>
         </a>
 
-        <a href="{{ route('menu') }}" class="menu-item">
+        <a href="{{ route('menu.category', 'Pizza') }}" class="menu-item">
             <img src="https://source.unsplash.com/400x300/?european-food">
             <p>Món Á – Âu</p>
         </a>
@@ -109,6 +161,11 @@
                         <p class="food-desc">
                             {{ $food->description ?? 'Món ăn hấp dẫn – phục vụ nóng hổi' }}
                         </p>
+                        @if($food->address)
+                            <p class="food-address" style="font-size: 13px; color: #666; margin-top: 4px;">
+                                📍 {{ $food->address }}
+                            </p>
+                        @endif
 
                         <!-- ===== GIÁ + NÚT ===== -->
                         <div class="food-bottom">
@@ -127,6 +184,7 @@
                             <!-- ĐẶT MÓN -->
                             <form action="{{ route('cart.add', $food->id) }}" method="POST">
                                 @csrf
+                                <input type="hidden" name="redirect" value="checkout">
                                 <button type="submit" class="btn-add" style="background:#ff6f00;">
                                     ⚡ Đặt món
                                 </button>

@@ -29,7 +29,7 @@
             <div class="total-box">
                 <span>Tổng thanh toán:</span>
                 <strong>
-                    {{ number_format(collect($cart)->sum(fn($i) => $i['price'] * $i['qty'])) }} đ
+                    {{ number_format($cart->items->sum(fn($i) => $i->price * $i->quantity)) }} đ
                 </strong>
             </div>
 

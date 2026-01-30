@@ -10,6 +10,7 @@ class Order extends Model
         'user_id',
         'customer_name',
         'address',
+        'phone',
         'total_price',
         'status'
     ];

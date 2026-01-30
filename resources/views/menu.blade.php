@@ -80,6 +80,7 @@
     </form>
 
     @auth
+        <a href="{{ route('orders') }}" class="btn-login">📦 Đơn hàng của bạn</a>
         <a href="{{ route('cart') }}" class="btn-login">🛒 Giỏ hàng</a>
         <form action="{{ route('logout') }}" method="POST" style="display:inline;">
             @csrf
@@ -89,18 +90,21 @@
 </header>
 
 <!-- ===== CATEGORY ===== -->
+
+
 <div style="text-align:center; margin:20px 0;">
     <a href="{{ route('menu') }}" class="btn-login">🍽 Tất cả</a>
-    <a href="{{ route('menu.category','do-uong') }}" class="btn-login">🥤 Đồ uống</a>
-    <a href="{{ route('menu.category','com') }}" class="btn-login">🍚 Cơm</a>
-    <a href="{{ route('menu.category','thuc-an-nhanh') }}" class="btn-login">🍔 Thức ăn nhanh</a>
+    <a href="{{ route('menu.category','Đồ uống') }}" class="btn-login">🥤 Đồ uống</a>
+    <a href="{{ route('menu.category','Món chính') }}" class="btn-login">🍚 Cơm/Món chính</a>
+    <a href="{{ route('menu.category','Fast Food') }}" class="btn-login">🍔 Đồ ăn nhanh</a>
+
 </div>
 
 <section class="menu">
 
     {{-- ❌ KHÔNG HIỆN "THỰC ĐƠN HÔM NAY" KHI TÌM KIẾM --}}
     @if(!request()->has('keyword'))
-        <h2 class="section-title">🍽 Thực đơn hôm nay</h2>
+        
     @endif
 
     @if($foods->count() == 0)
@@ -127,9 +131,21 @@
                                 {{ number_format($food->price) }} đ
                             </span>
 
-                            <form action="{{ route('cart.add',$food->id) }}" method="POST">
+                            <!-- THÊM VÀO GIỎ -->
+                            <form action="{{ route('cart.add', $food->id) }}" method="POST" style="margin-bottom:6px;">
                                 @csrf
-                                <button class="btn-add">➕ Đặt món</button>
+                                <button type="submit" class="btn-add">
+                                    🛒 Thêm vào giỏ hàng
+                                </button>
+                            </form>
+
+                            <!-- ĐẶT MÓN -->
+                            <form action="{{ route('cart.add', $food->id) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="redirect" value="checkout">
+                                <button type="submit" class="btn-add" style="background:#ff6f00;">
+                                    ⚡ Đặt món
+                                </button>
                             </form>
                         </div>
                     </div>

@@ -11,11 +11,18 @@ class OrderController extends Controller
     // ===============================
     // 1️⃣ TRANG CHECKOUT
     // ===============================
+    // ===============================
+    // 1️⃣ TRANG CHECKOUT
+    // ===============================
     public function checkout()
     {
-        $cart = session('cart', []);
+        // Lấy cart từ DB thay vì session
+        $cart = \App\Models\Cart::with('items.food')
+            ->where('user_id', auth()->id())
+            ->first();
 
-        if (empty($cart)) {
+        // Kiểm tra cart có tồn tại và có items không
+        if (!$cart || $cart->items->isEmpty()) {
             return redirect()->route('cart')
                 ->with('error', 'Giỏ hàng trống');
         }
@@ -35,17 +42,20 @@ class OrderController extends Controller
             'phone'         => 'nullable|string|max:20',
         ]);
 
-        $cart = session('cart', []);
+        // Lấy cart từ DB
+        $cart = \App\Models\Cart::with('items.food')
+            ->where('user_id', auth()->id())
+            ->first();
 
-        if (count($cart) == 0) {
+        if (!$cart || $cart->items->isEmpty()) {
             return redirect()->route('cart')
                 ->with('error', 'Giỏ hàng trống');
         }
 
         // ✅ Tính tổng tiền
         $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['qty'];
+        foreach ($cart->items as $item) {
+            $total += $item->price * $item->quantity;
         }
 
         // ✅ Tạo đơn hàng
@@ -59,17 +69,17 @@ class OrderController extends Controller
         ]);
 
         // ✅ Lưu chi tiết đơn hàng
-        foreach ($cart as $food_id => $item) {
+        foreach ($cart->items as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
-                'food_id'  => $food_id,
-                'price'    => $item['price'],
-                'quantity' => $item['qty'],
+                'food_id'  => $item->food_id,
+                'price'    => $item->price,
+                'quantity' => $item->quantity,
             ]);
         }
 
-        // ✅ Xóa giỏ hàng
-        session()->forget('cart');
+        // ✅ Xóa items trong giỏ hàng DB
+        $cart->items()->delete();
 
         // ✅ CÁCH 1: Quay về danh sách đơn hàng
         return redirect()->route('orders')
