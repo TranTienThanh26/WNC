@@ -16,7 +16,7 @@ class CartController extends Controller
         ->where('user_id', auth()->id())
         ->first();
 
-    return view('cart', compact('cart'));
+        return view('cart', compact('cart'));
     }
 
     // ➕ Thêm món vào giỏ
@@ -52,8 +52,36 @@ class CartController extends Controller
             return redirect()->route('checkout');
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Thêm vào giỏ hàng thành công!'
+            ]);
+        }
+
         return redirect()->route('cart')
             ->with('success', 'Đã thêm món vào giỏ hàng');
+    }
+
+    // ⚡ Mua ngay (Chỉ mua 1 món này, không ảnh hưởng giỏ hàng)
+    public function buyNow(Request $request, $id)
+    {
+        $food = Food::findOrFail($id);
+        $qty = (int) ($request->qty ?? 1);
+        if ($qty < 1) $qty = 1;
+
+        // Lưu vào session flash để checkout xử lý
+        // Dùng 'buy_now_item' để phân biệt với cart thường
+        session()->put('buy_now_item', [
+            'id' => $food->id,
+            'name' => $food->name,
+            'price' => $food->price,
+            'quantity' => $qty,
+            'image' => $food->image,
+            'food' => $food // Để view có thể truy cập property
+        ]);
+
+        return redirect()->route('checkout');
     }
 
     // ➕ Tăng số lượng

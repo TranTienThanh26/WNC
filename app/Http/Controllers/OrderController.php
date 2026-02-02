@@ -16,6 +16,24 @@ class OrderController extends Controller
     // ===============================
     public function checkout()
     {
+        // ⚡ CHECK: Có đang mua ngay 1 món không?
+        if (session()->has('buy_now_item')) {
+            $itemData = session('buy_now_item');
+            
+            // Mock object để view hiển thị giống cart
+            $cart = new \stdClass();
+            $cart->items = collect([
+                (object) [
+                    'food' => $itemData['food'],
+                    'price' => $itemData['price'],
+                    'quantity' => $itemData['quantity'],
+                    'food_id' => $itemData['id']
+                ]
+            ]);
+            
+            return view('checkout', compact('cart'));
+        }
+
         // Lấy cart từ DB thay vì session
         $cart = \App\Models\Cart::with('items.food')
             ->where('user_id', auth()->id())
@@ -42,20 +60,41 @@ class OrderController extends Controller
             'phone'         => 'nullable|string|max:20',
         ]);
 
-        // Lấy cart từ DB
-        $cart = \App\Models\Cart::with('items.food')
-            ->where('user_id', auth()->id())
-            ->first();
-
-        if (!$cart || $cart->items->isEmpty()) {
-            return redirect()->route('cart')
-                ->with('error', 'Giỏ hàng trống');
-        }
-
-        // ✅ Tính tổng tiền
         $total = 0;
-        foreach ($cart->items as $item) {
-            $total += $item->price * $item->quantity;
+        $itemsToOrder = [];
+        $isBuyNow = false;
+
+        // ⚡ XỬ LÝ MUA NGAY (BUY NOW)
+        if (session()->has('buy_now_item')) {
+            $itemData = session('buy_now_item');
+            $total = $itemData['price'] * $itemData['quantity'];
+            
+            $itemsToOrder[] = [
+                'food_id' => $itemData['id'],
+                'price' => $itemData['price'],
+                'quantity' => $itemData['quantity']
+            ];
+            
+            $isBuyNow = true;
+        } 
+        // 🛒 XỬ LÝ CART THƯỜNG
+        else {
+            $cart = \App\Models\Cart::with('items.food')
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$cart || $cart->items->isEmpty()) {
+                return redirect()->route('cart')->with('error', 'Giỏ hàng trống');
+            }
+
+            foreach ($cart->items as $item) {
+                $total += $item->price * $item->quantity;
+                $itemsToOrder[] = [
+                    'food_id' => $item->food_id,
+                    'price' => $item->price,
+                    'quantity' => $item->quantity
+                ];
+            }
         }
 
         // ✅ Tạo đơn hàng
@@ -69,19 +108,24 @@ class OrderController extends Controller
         ]);
 
         // ✅ Lưu chi tiết đơn hàng
-        foreach ($cart->items as $item) {
+        foreach ($itemsToOrder as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
-                'food_id'  => $item->food_id,
-                'price'    => $item->price,
-                'quantity' => $item->quantity,
+                'food_id'  => $item['food_id'],
+                'price'    => $item['price'],
+                'quantity' => $item['quantity'],
             ]);
         }
 
-        // ✅ Xóa items trong giỏ hàng DB
-        $cart->items()->delete();
+        // ✅ SAU KHI TẠO ĐƠN
+        if ($isBuyNow) {
+            // Xóa session mua ngay
+            session()->forget('buy_now_item');
+        } else {
+            // Xóa items trong giỏ hàng DB
+            $cart->items()->delete();
+        }
 
-        // ✅ CÁCH 1: Quay về danh sách đơn hàng
         return redirect()->route('orders')
             ->with('success', '🎉 Đặt hàng thành công! Vui lòng thanh toán.');
     }

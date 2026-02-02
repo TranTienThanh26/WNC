@@ -35,7 +35,7 @@
             @endphp
 
             <tr>
-                <td>{{ $item->food->name }}</td>
+                <td>{{ $item->food->name ?? 'Món không tồn tại' }}</td>
 
                 <td>{{ number_format($item->price) }}đ</td>
 
