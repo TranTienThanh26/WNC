@@ -59,9 +59,5 @@
             </tbody>
         </table>
 
-        <!-- Pagination -->
-        <div style="margin-top:20px;">
-            {{ $orders->links('pagination::bootstrap-4') }}
-        </div>
     </div>
 @endsection

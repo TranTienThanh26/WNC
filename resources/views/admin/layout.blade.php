@@ -175,6 +175,39 @@
             outline: none;
         }
         .form-control:focus { border-color: var(--primary); }
+
+        /* PAGINATION STYLING */
+        .pagination {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .pagination li {
+            display: inline-block;
+        }
+        .pagination li a, .pagination li span {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #334155;
+            background: #fff;
+            font-size: 14px;
+        }
+        .pagination li.active span {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+        .pagination li.disabled span {
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .pagination li a:hover {
+            background: #f1f5f9;
+        }
     </style>
 </head>
 <body>

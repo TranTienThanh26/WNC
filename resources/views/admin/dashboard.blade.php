@@ -67,9 +67,13 @@
                     <td>{{ $loop->iteration }}</td>
                     <td>
                         <div style="display:flex; align-items:center; gap:10px;">
-                            @if($food->image)
-                                <img src="{{ asset('storage/'.$food->image) }}" width="40" height="40" style="border-radius:5px; object-fit:cover;">
-                            @endif
+                            <img 
+                                src="{{ $food->image 
+                                    ? (Str::startsWith($food->image, 'foods/') ? asset($food->image) : asset('storage/'.$food->image)) 
+                                    : asset('foods/burger.jpg') 
+                                }}" 
+                                width="40" height="40" style="border-radius:5px; object-fit:cover;"
+                            >
                             {{ $food->name }}
                         </div>
                     </td>

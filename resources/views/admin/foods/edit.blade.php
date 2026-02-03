@@ -49,7 +49,13 @@
                 <label class="form-label">Hình ảnh hiện tại</label>
                 @if($food->image)
                     <div style="margin:10px 0;">
-                        <img src="{{ asset('storage/'.$food->image) }}" width="100" style="border-radius:5px;">
+                        <img 
+                            src="{{ $food->image 
+                                ? (Str::startsWith($food->image, 'foods/') ? asset($food->image) : asset('storage/'.$food->image)) 
+                                : asset('foods/burger.jpg') 
+                            }}" 
+                            width="100" style="border-radius:5px;"
+                        >
                     </div>
                 @endif
                 <label class="form-label">Chọn ảnh mới (nếu muốn thay đổi)</label>

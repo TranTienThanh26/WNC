@@ -28,7 +28,7 @@ class AdminController extends Controller
     // 🍔 MÓN ĂN - LIST
     public function foodIndex()
     {
-        $foods = Food::latest()->paginate(10);
+        $foods = Food::latest()->paginate(100);
         return view('admin.foods.index', compact('foods'));
     }
 
@@ -104,7 +104,7 @@ class AdminController extends Controller
     // 📦 ĐƠN HÀNG - LIST
     public function orderIndex()
     {
-        $orders = Order::latest()->paginate(10);
+        $orders = Order::latest()->paginate(100);
         return view('admin.orders.index', compact('orders'));
     }
 
