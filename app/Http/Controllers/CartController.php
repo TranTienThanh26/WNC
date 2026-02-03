@@ -18,7 +18,7 @@ class CartController extends Controller
                     ->where('user_id', Auth::id())
                     ->first();
 
-        return view('cart', compact('cart'));
+        return view('user.cart', compact('cart'));
     }
 
     // ➕ 2. THÊM VÀO GIỎ (Lưu vào Database)

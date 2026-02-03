@@ -22,6 +22,6 @@ class HomeController extends Controller
         // Đếm tổng để hiện nút "Xem thêm" nếu cần
         $totalFoods = Food::count();
 
-        return view('home', compact('foods', 'totalFoods'));
+        return view('user.home', compact('foods', 'totalFoods'));
     }
 }

@@ -13,7 +13,8 @@ class MenuController extends Controller
         // Sử dụng paginate thay vì get() để không bị load quá nhiều món 1 lúc
         $foods = Food::latest()->paginate(12);
 
-        return view('menu', compact('foods'));
+       return view('user.menu', compact('foods'));
+       }
     }
 
     // 2️⃣ LỌC THEO DANH MỤC (Ví dụ: /menu/Fast Food)
@@ -24,7 +25,7 @@ class MenuController extends Controller
                      ->paginate(12);
 
         // Truyền thêm biến $category để view hiển thị tiêu đề "Danh mục: Fast Food"
-        return view('menu', compact('foods', 'category'));
+        return view('user.menu', compact('foods', 'category'));
     }
 
     // 3️⃣ TÌM KIẾM MÓN ĂN (Search)
@@ -43,6 +44,6 @@ class MenuController extends Controller
         // withQueryString() giúp giữ lại từ khóa tìm kiếm khi bấm sang trang 2, 3
         $foods->appends(['keyword' => $keyword]);
 
-        return view('menu', compact('foods', 'keyword'));
+        return view('user.menu', compact('foods', 'keyword'));
     }
 }

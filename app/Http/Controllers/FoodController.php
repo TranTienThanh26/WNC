@@ -18,6 +18,6 @@ class FoodController extends Controller
                             ->take(4)
                             ->get();
 
-        return view('food_detail', compact('food', 'relatedFoods'));
+        return view('user.food_detail', compact('food', 'relatedFoods'));
     }
 }

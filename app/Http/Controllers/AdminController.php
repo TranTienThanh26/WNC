@@ -9,48 +9,51 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    // 🏠 DASHBOARD
+    // 🏠 1. DASHBOARD (TỔNG QUAN)
     public function index()
     {
         $totalOrders = Order::count();
-        $revenue     = Order::where('status', 'Đã giao hàng')->sum('total_price'); // Hoặc tính all tùy logic
-        // Tạm tính doanh thu của tất cả đơn không bị hủy
-        $revenue     = Order::where('status', '!=', 'Đã hủy')->sum('total_price');
+        
+        // Doanh thu: Chỉ tính những đơn KHÔNG bị hủy
+        $revenue = Order::where('status', '!=', 'Đã hủy')->sum('total_price');
         
         $totalFoods  = Food::count();
+        
+        // Đếm user thường (không tính admin)
         $totalUsers  = User::where('role', 'user')->count();
 
+        // Lấy 5 món mới nhất để hiển thị widget
         $newFoods    = Food::latest()->take(5)->get();
 
         return view('admin.dashboard', compact('totalOrders', 'revenue', 'totalFoods', 'totalUsers', 'newFoods'));
     }
 
-    // 🍔 MÓN ĂN - LIST
+    // ====================================================
+    // 🍔 QUẢN LÝ MÓN ĂN (FOODS)
+    // ====================================================
+
+    // Danh sách món ăn (Giao diện chính chứa cả Modal Thêm/Sửa)
     public function foodIndex()
     {
-        $foods = Food::latest()->paginate(100);
+        // Paginate 10 món mỗi trang (100 là quá nhiều, kéo mỏi tay)
+        $foods = Food::latest()->paginate(10); 
         return view('admin.foods.index', compact('foods'));
     }
 
-    // 🍔 MÓN ĂN - FORM THÊM
-    public function foodCreate()
-    {
-        return view('admin.foods.create');
-    }
-
-    // 🍔 MÓN ĂN - XỬ LÝ THÊM
+    // 🟢 XỬ LÝ THÊM MỚI (Từ Modal)
     public function foodStore(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'price' => 'required|integer',
+            'name'     => 'required|string|max:255',
+            'price'    => 'required|integer|min:0',
             'category' => 'required',
-            'image' => 'nullable|image',
-            'address' => 'nullable|string'
+            'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'address'  => 'nullable|string'
         ]);
 
         $data = $request->all();
 
+        // Xử lý upload ảnh
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('foods', 'public');
             $data['image'] = $path;
@@ -59,30 +62,25 @@ class AdminController extends Controller
         Food::create($data);
 
         return redirect()->route('admin.foods.index')
-            ->with('success', 'Thêm món ăn thành công');
+            ->with('success', '✅ Thêm món ăn thành công!');
     }
 
-    // 🍔 MÓN ĂN - FORM SỬA
-    public function foodEdit($id)
-    {
-        $food = Food::findOrFail($id);
-        return view('admin.foods.edit', compact('food'));
-    }
-
-    // 🍔 MÓN ĂN - XỬ LÝ SỬA
+    // 🟠 XỬ LÝ CẬP NHẬT (Từ Modal)
     public function foodUpdate(Request $request, $id)
     {
         $food = Food::findOrFail($id);
 
         $request->validate([
-            'name' => 'required',
-            'price' => 'required|integer',
+            'name'     => 'required|string|max:255',
+            'price'    => 'required|integer|min:0',
             'category' => 'required',
-            'address' => 'nullable|string'
+            'address'  => 'nullable|string',
+            'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         $data = $request->all();
 
+        // Nếu có up ảnh mới thì thay thế, không thì giữ nguyên
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('foods', 'public');
             $data['image'] = $path;
@@ -91,30 +89,48 @@ class AdminController extends Controller
         $food->update($data);
 
         return redirect()->route('admin.foods.index')
-            ->with('success', 'Cập nhật món ăn thành công');
+            ->with('success', '✅ Cập nhật món ăn thành công!');
     }
 
-    // 🍔 MÓN ĂN - XÓA
+    // 🔴 XÓA MÓN ĂN
     public function foodDelete($id)
     {
-        Food::findOrFail($id)->delete();
-        return back()->with('success', 'Đã xóa món ăn');
+        $food = Food::findOrFail($id);
+        
+        // (Tuỳ chọn) Nếu muốn xóa cả ảnh trong folder storage để tiết kiệm dung lượng:
+        // if ($food->image && \Storage::disk('public')->exists($food->image)) {
+        //    \Storage::disk('public')->delete($food->image);
+        // }
+
+        $food->delete();
+        
+        return back()->with('success', '🗑️ Đã xóa món ăn khỏi thực đơn.');
     }
 
-    // 📦 ĐƠN HÀNG - LIST
+    // ====================================================
+    // 📦 QUẢN LÝ ĐƠN HÀNG (ORDERS)
+    // ====================================================
+
+    // Danh sách đơn hàng
     public function orderIndex()
     {
-        $orders = Order::latest()->paginate(100);
+        $orders = Order::latest()->paginate(10);
         return view('admin.orders.index', compact('orders'));
     }
 
-    // 📦 ĐƠN HÀNG - STATUS
+    // Cập nhật trạng thái đơn
     public function orderUpdateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
+        
+        // Validate dữ liệu đầu vào cho an toàn
+        $request->validate([
+            'status' => 'required|in:Chờ xác nhận,Đang chuẩn bị,Đang giao,Đã giao hàng,Đã hủy'
+        ]);
+
         $order->status = $request->status;
         $order->save();
 
-        return back()->with('success', 'Cập nhật trạng thái đơn hàng thành công');
+        return back()->with('success', '🔄 Trạng thái đơn hàng đã được cập nhật.');
     }
 }

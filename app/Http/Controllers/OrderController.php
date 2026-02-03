@@ -5,158 +5,171 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Cart;
+use Illuminate\Support\Facades\DB; // 🟢 BẮT BUỘC PHẢI CÓ ĐỂ DÙNG TRANSACTION
 
 class OrderController extends Controller
 {
-    // ===============================
-    // 1️⃣ TRANG CHECKOUT
-    // ===============================
-    // ===============================
-    // 1️⃣ TRANG CHECKOUT
-    // ===============================
+    // ====================================================
+    // 1️⃣ TRANG THANH TOÁN (CHECKOUT)
+    // ====================================================
     public function checkout()
     {
-        // ⚡ CHECK: Có đang mua ngay 1 món không?
+        // ⚡ TRƯỜNG HỢP 1: MUA NGAY (BUY NOW)
+        // Kiểm tra xem trong Session có lưu món "mua ngay" không
         if (session()->has('buy_now_item')) {
             $itemData = session('buy_now_item');
             
-            // Mock object để view hiển thị giống cart
+            // Tạo một object giả lập cấu trúc giống Giỏ hàng để View không bị lỗi
             $cart = new \stdClass();
             $cart->items = collect([
                 (object) [
-                    'food' => $itemData['food'],
-                    'price' => $itemData['price'],
-                    'quantity' => $itemData['quantity'],
-                    'food_id' => $itemData['id']
+                    'food_id'  => $itemData['id'],
+                    'food'     => $itemData['food'], // Object món ăn
+                    'price'    => $itemData['price'],
+                    'quantity' => $itemData['quantity']
                 ]
             ]);
             
-            return view('checkout', compact('cart'));
+            return view('user.checkout', compact('cart'));
         }
 
-        // Lấy cart từ DB thay vì session
-        $cart = \App\Models\Cart::with('items.food')
+        // 🛒 TRƯỜNG HỢP 2: MUA TỪ GIỎ HÀNG
+        $cart = Cart::with('items.food')
             ->where('user_id', auth()->id())
             ->first();
 
-        // Kiểm tra cart có tồn tại và có items không
+        // Nếu giỏ hàng trống hoặc không tồn tại -> Đá về trang giỏ hàng
         if (!$cart || $cart->items->isEmpty()) {
             return redirect()->route('cart')
-                ->with('error', 'Giỏ hàng trống');
+                ->with('error', 'Giỏ hàng của bạn đang trống, vui lòng chọn món trước!');
         }
 
-        return view('checkout', compact('cart'));
+        return view('user.checkout', compact('cart'));
     }
 
-    // ===============================
-    // 2️⃣ LƯU ĐƠN HÀNG
-    // ===============================
+    // ====================================================
+    // 2️⃣ XỬ LÝ LƯU ĐƠN HÀNG (STORE)
+    // ====================================================
     public function store(Request $request)
     {
-        // ✅ Validate
+        // 1. Validate dữ liệu đầu vào
         $request->validate([
             'customer_name' => 'required|string|max:255',
+            'phone'         => 'required|string|max:20',
             'address'       => 'required|string|max:255',
-            'phone'         => 'nullable|string|max:20',
         ]);
 
-        $total = 0;
-        $itemsToOrder = [];
-        $isBuyNow = false;
+        // 🟢 BẮT ĐẦU GIAO DỊCH (Transaction)
+        // Giúp đảm bảo: Hoặc là lưu thành công tất cả, hoặc là không lưu gì cả (tránh lỗi rác data)
+        DB::beginTransaction();
 
-        // ⚡ XỬ LÝ MUA NGAY (BUY NOW)
-        if (session()->has('buy_now_item')) {
-            $itemData = session('buy_now_item');
-            $total = $itemData['price'] * $itemData['quantity'];
+        try {
+            $total = 0;
+            $itemsToOrder = [];
+            $isBuyNow = false;
+
+            // --- BƯỚC A: LẤY DỮ LIỆU MÓN ĂN ---
             
-            $itemsToOrder[] = [
-                'food_id' => $itemData['id'],
-                'price' => $itemData['price'],
-                'quantity' => $itemData['quantity']
-            ];
-            
-            $isBuyNow = true;
-        } 
-        // 🛒 XỬ LÝ CART THƯỜNG
-        else {
-            $cart = \App\Models\Cart::with('items.food')
-                ->where('user_id', auth()->id())
-                ->first();
-
-            if (!$cart || $cart->items->isEmpty()) {
-                return redirect()->route('cart')->with('error', 'Giỏ hàng trống');
-            }
-
-            foreach ($cart->items as $item) {
-                $total += $item->price * $item->quantity;
+            // Nếu là Mua Ngay
+            if (session()->has('buy_now_item')) {
+                $itemData = session('buy_now_item');
+                $total = $itemData['price'] * $itemData['quantity'];
+                
                 $itemsToOrder[] = [
-                    'food_id' => $item->food_id,
-                    'price' => $item->price,
-                    'quantity' => $item->quantity
+                    'food_id'  => $itemData['id'],
+                    'price'    => $itemData['price'],
+                    'quantity' => $itemData['quantity']
                 ];
+                $isBuyNow = true;
+            } 
+            // Nếu là Mua từ Giỏ hàng
+            else {
+                $cart = Cart::with('items')->where('user_id', auth()->id())->first();
+
+                // Check kỹ lần cuối
+                if (!$cart || $cart->items->isEmpty()) {
+                    return redirect()->route('cart');
+                }
+
+                foreach ($cart->items as $item) {
+                    $total += $item->price * $item->quantity;
+                    $itemsToOrder[] = [
+                        'food_id'  => $item->food_id,
+                        'price'    => $item->price,
+                        'quantity' => $item->quantity
+                    ];
+                }
             }
-        }
 
-        // ✅ Tạo đơn hàng
-        $order = Order::create([
-            'user_id'       => auth()->id(),
-            'customer_name' => $request->customer_name,
-            'phone'         => $request->phone,
-            'address'       => $request->address,
-            'total_price'   => $total,
-            'status'        => 'Chờ thanh toán',
-        ]);
-
-        // ✅ Lưu chi tiết đơn hàng
-        foreach ($itemsToOrder as $item) {
-            OrderItem::create([
-                'order_id' => $order->id,
-                'food_id'  => $item['food_id'],
-                'price'    => $item['price'],
-                'quantity' => $item['quantity'],
+            // --- BƯỚC B: TẠO ĐƠN HÀNG (ORDER) ---
+            $order = Order::create([
+                'user_id'       => auth()->id(),
+                'customer_name' => $request->customer_name,
+                'phone'         => $request->phone,
+                'address'       => $request->address,
+                'total_price'   => $total,
+                // ⚠️ QUAN TRỌNG: Phải là 'Chờ xác nhận' để khớp với Admin Controller
+                'status'        => 'Chờ xác nhận', 
             ]);
-        }
 
-        // ✅ SAU KHI TẠO ĐƠN
-        if ($isBuyNow) {
-            // Xóa session mua ngay
-            session()->forget('buy_now_item');
-        } else {
-            // Xóa items trong giỏ hàng DB
-            $cart->items()->delete();
-        }
+            // --- BƯỚC C: TẠO CHI TIẾT ĐƠN (ORDER ITEMS) ---
+            foreach ($itemsToOrder as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'food_id'  => $item['food_id'],
+                    'price'    => $item['price'],
+                    'quantity' => $item['quantity'],
+                ]);
+            }
 
-        return redirect()->route('orders')
-            ->with('success', '🎉 Đặt hàng thành công! Vui lòng thanh toán.');
+            // --- BƯỚC D: DỌN DẸP ---
+            if ($isBuyNow) {
+                session()->forget('buy_now_item'); // Xóa session mua ngay
+            } else {
+                $cart->items()->delete(); // Xóa sạch giỏ hàng trong DB
+            }
+
+            // ✅ MỌI THỨ OK -> LƯU VÀO DB
+            DB::commit();
+
+            return redirect()->route('orders')
+                ->with('success', '🎉 Đặt hàng thành công! Đơn hàng đang chờ quán xác nhận.');
+
+        } catch (\Exception $e) {
+            // ❌ CÓ LỖI -> HOÀN TÁC MỌI THỨ
+            DB::rollBack();
+            return back()->with('error', 'Đã xảy ra lỗi: ' . $e->getMessage());
+        }
     }
 
-    // ===============================
-    // 3️⃣ DANH SÁCH ĐƠN HÀNG
-    // ===============================
+    // ====================================================
+    // 3️⃣ DANH SÁCH ĐƠN HÀNG CỦA TÔI
+    // ====================================================
     public function index()
     {
         $orders = Order::where('user_id', auth()->id())
-            ->orderBy('id', 'desc')
+            ->latest() // Sắp xếp mới nhất lên đầu
             ->get();
 
-        return view('orders', compact('orders'));
+        return view('user.orders', compact('orders'));
     }
 
-    // ===============================
+    // ====================================================
     // 4️⃣ CHI TIẾT ĐƠN HÀNG
-    // ===============================
+    // ====================================================
     public function show($id)
     {
-        // 🔒 Chỉ xem đơn của chính mình
+        // Tìm đơn hàng (Chỉ cho phép xem đơn của chính mình)
         $order = Order::where('id', $id)
             ->where('user_id', auth()->id())
             ->firstOrFail();
 
-        // 🧾 Lấy danh sách món
+        // Lấy danh sách món trong đơn đó
         $items = OrderItem::where('order_id', $order->id)
-            ->with('food') // cần relation food()
+            ->with('food') // Load kèm thông tin món ăn (tên, ảnh)
             ->get();
 
-        return view('order_detail', compact('order', 'items'));
+        return view('user.order_detail', compact('order', 'items'));
     }
 }
