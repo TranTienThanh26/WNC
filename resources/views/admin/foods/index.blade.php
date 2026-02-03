@@ -27,11 +27,13 @@
                 <tr>
                     <td>{{ $food->id }}</td>
                     <td>
-                        @if($food->image)
-                            <img src="{{ asset('storage/'.$food->image) }}" width="60" height="60" style="border-radius:5px; object-fit:cover;">
-                        @else
-                            <span style="color:#aaa;">No Image</span>
-                        @endif
+                        <img 
+                            src="{{ $food->image 
+                                ? (Str::startsWith($food->image, 'foods/') ? asset($food->image) : asset('storage/'.$food->image)) 
+                                : asset('foods/burger.jpg') 
+                            }}" 
+                            width="60" height="60" style="border-radius:5px; object-fit:cover;"
+                        >
                     </td>
                     <td><b>{{ $food->name }}</b></td>
                     <td>{{ number_format($food->price) }} đ</td>
@@ -52,9 +54,5 @@
             </tbody>
         </table>
 
-        <!-- Pagination -->
-        <div style="margin-top:20px;">
-            {{ $foods->links('pagination::bootstrap-4') }}
-        </div>
     </div>
 @endsection
