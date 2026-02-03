@@ -1,203 +1,191 @@
 @extends('admin.layout')
 
-@section('title', 'Quản lý món ăn')
+@section('title', 'TTD.Signature | Quản lý Thực đơn')
 
 @section('content')
+<style>
+    /* FIX LỖI BỊ MỜ: Ép Modal luôn nổi lên trên lớp màn đen (Backdrop) */
+    .modal { z-index: 1070 !important; }
+    .modal-backdrop { z-index: 1060 !important; }
+    
+    .food-manager-wrapper { padding: 25px; position: relative; z-index: 1; }
+    .sig-banner { background: var(--dark); color: #fff; padding: 40px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .lux-card { background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: none; overflow: hidden; }
+    .food-thumb { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; }
+    
+    #modalLoading { padding: 50px; text-align: center; display: none; }
+</style>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="page-title m-0">🍽 Danh sách thực đơn</h2>
-        
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createFoodModal">
-            <i class="fas fa-plus-circle me-2"></i>Thêm món mới
+<div class="food-manager-wrapper">
+    <div class="sig-banner shadow-sm">
+        <div>
+            <h2 class="serif fw-bold mb-1">Thực đơn <span style="color: var(--primary)">Signature</span></h2>
+            <p class="small opacity-50 mb-0">HỆ THỐNG QUẢN TRỊ</p>
+        </div>
+        <button class="btn px-4 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#createFoodModal" 
+                style="background: var(--primary); color: #fff; border-radius: 12px; border: none;">
+            <i class="fas fa-plus me-2"></i> THÊM MÓN
         </button>
     </div>
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">#</th>
-                            <th>Hình ảnh</th>
-                            <th>Tên món</th>
-                            <th>Giá bán</th>
-                            <th>Danh mục</th>
-                            <th>Địa chỉ</th>
-                            <th class="text-center">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($foods as $food)
-                        <tr>
-                            <td class="ps-4">{{ $loop->iteration + ($foods->currentPage() - 1) * $foods->perPage() }}</td>
-                            <td>
-                                <img 
-                                    src="{{ $food->image 
-                                        ? (Str::startsWith($food->image, 'foods/') ? asset('storage/'.$food->image) : asset('storage/'.$food->image)) 
-                                        : 'https://placehold.co/600x400?text=No+Image' 
-                                    }}" 
-                                    width="50" height="50" class="rounded-3 object-fit-cover border"
-                                    alt="{{ $food->name }}"
-                                >
-                            </td>
-                            <td class="fw-bold text-dark">{{ $food->name }}</td>
-                            <td class="text-danger fw-bold">{{ number_format($food->price, 0, ',', '.') }} đ</td>
-                            <td>
+    <div class="lux-card card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light text-uppercase">
+                    <tr>
+                        <th class="ps-4">Tuyệt phẩm</th>
+                        <th>Danh mục</th>
+                        <th>Địa chỉ</th>
+                        <th>Giá bán</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($foods as $food)
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
                                 @php
-                                    $badges = [
-                                        'Món chính' => 'bg-primary',
-                                        'Cơm' => 'bg-success',
-                                        'Đồ uống' => 'bg-info text-dark',
-                                        'Fast Food' => 'bg-warning text-dark',
-                                        'Pizza' => 'bg-danger',
-                                        'Món Á – Âu' => 'bg-dark'
-                                    ];
-                                    $badgeClass = $badges[$food->category] ?? 'bg-secondary';
+                                    $imgSrc = str_contains($food->image, 'http') ? $food->image : asset('storage/' . $food->image);
                                 @endphp
-                                <span class="badge {{ $badgeClass }}">{{ $food->category }}</span>
-                            </td>
-                            <td class="text-muted small">
-                                <i class="fas fa-map-marker-alt text-danger me-1"></i>
-                                {{ Str::limit($food->address, 20) ?? '---' }}
-                            </td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-outline-primary me-1" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#editFoodModal{{ $food->id }}"
-                                        title="Sửa">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                
-                                <a href="{{ route('admin.foods.delete', $food->id) }}" 
-                                   class="btn btn-sm btn-outline-danger"
-                                   onclick="return confirm('⚠️ CẢNH BÁO:\nBạn có chắc chắn muốn xóa món này không?');"
-                                   title="Xóa">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-
-                                <div class="modal fade text-start" id="editFoodModal{{ $food->id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header bg-primary text-white">
-                                                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Cập nhật: {{ $food->name }}</h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <form action="{{ route('admin.foods.update', $food->id) }}" method="POST" enctype="multipart/form-data">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <div class="row g-3">
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-bold">Tên món ăn <span class="text-danger">*</span></label>
-                                                            <input type="text" name="name" class="form-control" value="{{ $food->name }}" required>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-bold">Giá (VNĐ) <span class="text-danger">*</span></label>
-                                                            <input type="number" name="price" class="form-control" value="{{ $food->price }}" required>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                                                            <select name="category" class="form-select" required>
-                                                                @foreach(['Món chính', 'Cơm', 'Đồ uống', 'Fast Food', 'Pizza', 'Món Á – Âu'] as $cat)
-                                                                    <option value="{{ $cat }}" {{ $food->category == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-bold">Địa chỉ quán</label>
-                                                            <input type="text" name="address" class="form-control" value="{{ $food->address }}">
-                                                        </div>
-                                                        <div class="col-12">
-                                                            <label class="form-label fw-bold">Mô tả</label>
-                                                            <textarea name="description" class="form-control" rows="3">{{ $food->description }}</textarea>
-                                                        </div>
-                                                        <div class="col-12">
-                                                            <label class="form-label fw-bold">Hình ảnh</label>
-                                                            <div class="d-flex align-items-center gap-3 p-2 border rounded bg-light">
-                                                                <img src="{{ $food->image ? asset('storage/'.$food->image) : 'https://placehold.co/50x50' }}" width="60" height="60" class="rounded object-fit-cover">
-                                                                <div class="flex-grow-1">
-                                                                    <input type="file" name="image" class="form-control">
-                                                                    <small class="text-muted">Chỉ chọn nếu muốn thay đổi ảnh cũ</small>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer bg-light">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                                    <button type="submit" class="btn btn-primary fw-bold">Lưu thay đổi</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            
-            @if($foods->hasPages())
-                <div class="p-3 border-top d-flex justify-content-end">
-                    {{ $foods->links() }}
-                </div>
-            @endif
+                                <img src="{{ $food->image ? $imgSrc : 'https://placehold.co/100' }}" class="food-thumb me-3" onerror="this.src='https://placehold.co/100'">
+                                <span class="fw-bold text-dark">{{ $food->name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ $food->category->name ?? 'N/A' }}</td>
+                        <td><small class="text-muted">{{ $food->address ?: 'Toàn hệ thống' }}</small></td>
+                        <td><span class="fw-bold text-primary">{{ number_format($food->price) }}đ</span></td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-edit-trigger" data-id="{{ $food->id }}" 
+                                    style="background: rgba(197,160,89,0.1); color: var(--primary); border:none; padding: 8px 15px; border-radius: 8px;">
+                                <i class="fas fa-edit me-1"></i> Sửa
+                            </button>
+                            <a href="{{ route('admin.foods.delete', $food->id) }}" class="ms-2 text-danger" onclick="return confirm('Xác nhận xóa món này?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="createFoodModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i>Thêm món ăn mới</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="createFoodModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 25px;">
+            <form action="{{ route('admin.foods.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header border-0 px-4 pt-4">
+                    <h4 class="serif fw-bold m-0">Thêm <span style="color: var(--primary)">Mỹ Thực Mới</span></h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ route('admin.foods.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Tên món ăn <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control" placeholder="Ví dụ: Phở bò tái lăn..." required>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8 mb-3"><label class="small fw-bold">TÊN MÓN</label><input type="text" name="name" class="form-control" required></div>
+                        <div class="col-md-4 mb-3"><label class="small fw-bold">GIÁ BÁN</label><input type="number" name="price" class="form-control" required></div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-bold">DANH MỤC</label>
+                            <select name="category_id" class="form-select">
+                                @foreach($categories as $cat) <option value="{{ $cat->id }}">{{ $cat->name }}</option> @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3"><label class="small fw-bold">ĐỊA CHỈ</label><input type="text" name="address" class="form-control"></div>
+                        <div class="col-12 mb-3"><label class="small fw-bold">HÌNH ẢNH</label><input type="file" name="image" class="form-control" required></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="submit" class="btn btn-dark w-100 py-3 fw-bold shadow" style="border-radius: 12px; color: var(--primary);">LƯU MỸ THỰC</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 25px;">
+            <form id="editFoodForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header border-0 px-4 pt-4">
+                    <h4 class="serif fw-bold m-0">Hiệu chỉnh <span style="color: var(--primary)">Mỹ Thực</span></h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div id="modalLoading"><div class="spinner-border text-warning" role="status"></div></div>
+                <div class="modal-body p-4" id="modalContent" style="display:none;">
+                    <div class="row g-4">
+                        <div class="col-md-5">
+                            <img id="edit_preview" src="" class="img-fluid rounded-4 border w-100" style="aspect-ratio: 1/1; object-fit: cover;">
+                            <input type="file" name="image" class="form-control mt-3" id="edit_image_input">
+                        </div>
+                        <div class="col-md-7">
+                            <div class="mb-3"><label class="small fw-bold">TÊN MÓN</label><input type="text" name="name" id="edit_name" class="form-control py-2 bg-light border-0" required></div>
+                            <div class="row g-2">
+                                <div class="col-6 mb-3"><label class="small fw-bold">GIÁ BÁN</label><input type="number" name="price" id="edit_price" class="form-control py-2 bg-light border-0" required></div>
+                                <div class="col-6 mb-3">
+                                    <label class="small fw-bold">DANH MỤC</label>
+                                    <select name="category_id" id="edit_category" class="form-select py-2 bg-light border-0">
+                                        @foreach($categories as $cat) <option value="{{ $cat->id }}">{{ $cat->name }}</option> @endforeach
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Giá (VNĐ) <span class="text-danger">*</span></label>
-                                <input type="number" name="price" class="form-control" placeholder="Ví dụ: 50000" min="0" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                                <select name="category" class="form-select" required>
-                                    <option value="" disabled selected>-- Chọn danh mục --</option>
-                                    <option value="Món chính">Món chính</option>
-                                    <option value="Cơm">Cơm</option>
-                                    <option value="Đồ uống">Đồ uống</option>
-                                    <option value="Fast Food">Fast Food</option>
-                                    <option value="Pizza">Pizza</option>
-                                    <option value="Món Á – Âu">Món Á – Âu</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Địa chỉ quán</label>
-                                <input type="text" name="address" class="form-control" placeholder="Ví dụ: 123 Cầu Giấy...">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Mô tả</label>
-                                <textarea name="description" class="form-control" rows="3" placeholder="Mô tả hương vị, thành phần..."></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Hình ảnh</label>
-                                <input type="file" name="image" class="form-control" accept="image/*">
-                            </div>
+                            <div class="mb-3"><label class="small fw-bold">ĐỊA CHỈ PHỤC VỤ</label><input type="text" name="address" id="edit_address" class="form-control py-2 bg-light border-0"></div>
+                            <div class="mb-3"><label class="small fw-bold">MÔ TẢ</label><textarea name="description" id="edit_description" class="form-control bg-light border-0" rows="3"></textarea></div>
                         </div>
                     </div>
-                    <div class="modal-footer bg-light">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-success fw-bold">Tạo mới ngay</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="submit" class="btn btn-dark w-100 py-3 fw-bold shadow" style="border-radius: 12px; color: var(--primary);">CẬP NHẬT THÔNG TIN</button>
+                </div>
+            </form>
         </div>
     </div>
-
+</div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $(document).on('click', '.btn-edit-trigger', function() {
+        const id = $(this).data('id');
+        const modal = new bootstrap.Modal(document.getElementById('editModal'));
+        modal.show();
+        
+        $('#modalLoading').show();
+        $('#modalContent').hide();
+
+        $.ajax({
+            url: `/admin/foods/${id}/edit`,
+            type: 'GET',
+            success: function(res) {
+                $('#edit_name').val(res.name);
+                $('#edit_price').val(res.price);
+                $('#edit_category').val(res.category_id);
+                $('#edit_description').val(res.description);
+                $('#edit_address').val(res.address);
+                
+                let imgSrc = res.image.includes('http') ? res.image : `/storage/${res.image}`;
+                $('#edit_preview').attr('src', imgSrc);
+                
+                // Gán Action URL để nút Lưu có hiệu lực
+                $('#editFoodForm').attr('action', `/admin/foods/update/${id}`);
+
+                $('#modalLoading').hide();
+                $('#modalContent').fadeIn();
+            }
+        });
+    });
+
+    // Preview ảnh khi chọn file mới
+    $('#edit_image_input').change(function() {
+        const file = this.files[0];
+        if (file) {
+            let reader = new FileReader();
+            reader.onload = function(event) { $('#edit_preview').attr('src', event.target.result); }
+            reader.readAsDataURL(file);
+        }
+    });
+});
+</script>
+@endpush

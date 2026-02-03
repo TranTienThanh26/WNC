@@ -10,40 +10,44 @@ use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
+    // Hàm này giúp lấy giỏ hàng của User đang đăng nhập
+    private function getCart()
+    {
+        return Cart::firstOrCreate(['user_id' => Auth::id()]);
+    }
+
     // 🛒 1. XEM GIỎ HÀNG
     public function index()
     {
-        // Lấy giỏ hàng của người dùng hiện tại từ Database
-        $cart = Cart::with('items.food')
-                    ->where('user_id', Auth::id())
-                    ->first();
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem giỏ hàng');
+        }
 
+        $cart = $this->getCart();
         return view('user.cart', compact('cart'));
     }
 
-    // ➕ 2. THÊM VÀO GIỎ (Lưu vào Database)
+    // ➕ 2. THÊM VÀO GIỎ (LƯU VÀO DB)
     public function add(Request $request, $id)
     {
+        if (!Auth::check()) {
+            return response()->json(['login' => true]);
+        }
+
         $food = Food::findOrFail($id);
         $qty = $request->qty ? (int)$request->qty : 1;
         if ($qty < 1) $qty = 1;
 
-        // Tìm hoặc tạo giỏ hàng cho user này
-        $cart = Cart::firstOrCreate([
-            'user_id' => Auth::id()
-        ]);
+        $cart = $this->getCart();
 
-        // Kiểm tra món này đã có trong giỏ chưa
         $item = CartItem::where('cart_id', $cart->id)
                         ->where('food_id', $food->id)
                         ->first();
 
         if ($item) {
-            // Nếu có rồi -> Tăng số lượng
             $item->quantity += $qty;
             $item->save();
         } else {
-            // Nếu chưa -> Tạo mới
             CartItem::create([
                 'cart_id'  => $cart->id,
                 'food_id'  => $food->id,
@@ -52,80 +56,99 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Đã thêm món vào giỏ hàng!');
+        return response()->json(['success' => true, 'message' => 'Đã thêm món vào giỏ hàng!']);
     }
 
-    // ⚡ 3. MUA NGAY (Không lưu Database, dùng Session tạm)
+    // ⚡ 3. MUA NGAY (LƯU TẠM SESSION)
     public function buyNow(Request $request, $id)
     {
+        if (!Auth::check()) {
+            return response()->json(['login' => true]);
+        }
+
         $food = Food::findOrFail($id);
         $qty = $request->qty ? (int)$request->qty : 1;
 
-        // Lưu thông tin món này vào Session đặc biệt để Checkout nhận biết
         session()->put('buy_now_item', [
             'id'       => $food->id,
             'name'     => $food->name,
             'price'    => $food->price,
-            'quantity' => $qty,
             'image'    => $food->image,
-            'food'     => $food // Lưu cả object để view hiển thị dễ dàng
+            'quantity' => $qty
         ]);
 
-        // Chuyển thẳng đến trang thanh toán
-        return redirect()->route('checkout');
+        return response()->json(['success' => true, 'redirect' => route('checkout')]);
     }
 
-    // 🔼 4. TĂNG SỐ LƯỢNG
-    public function increase($id)
-    {
-        $item = CartItem::findOrFail($id);
-        
-        // Bảo mật: Chỉ sửa món trong giỏ của mình (tránh hack ID)
-        if ($item->cart->user_id == Auth::id()) {
-            $item->increment('quantity');
-        }
-        
-        return redirect()->back();
-    }
-
-    // 🔽 5. GIẢM SỐ LƯỢNG
-    public function decrease($id)
-    {
-        $item = CartItem::findOrFail($id);
-
-        if ($item->cart->user_id == Auth::id()) {
-            if ($item->quantity > 1) {
-                $item->decrement('quantity');
-            } else {
-                // Nếu giảm về 0 thì xóa luôn
-                $item->delete();
-            }
-        }
-
-        return redirect()->back();
-    }
-
-    // ❌ 6. XÓA MÓN
+    // ❌ XÓA MỘT MÓN
     public function remove($id)
     {
-        $item = CartItem::findOrFail($id);
-        
-        if ($item->cart->user_id == Auth::id()) {
+        if (!Auth::check()) return redirect()->route('login');
+
+        $item = CartItem::find($id);
+        if ($item && $item->cart->user_id == Auth::id()) {
             $item->delete();
         }
-
-        return redirect()->back()->with('success', 'Đã xóa món khỏi giỏ hàng');
+        return redirect()->back();
     }
 
-    // 🧹 7. XÓA SẠCH GIỎ
+    // 🧹 XÓA HẾT GIỎ
     public function clear()
     {
-        $cart = Cart::where('user_id', Auth::id())->first();
-        
-        if ($cart) {
-            $cart->items()->delete();
+        if (!Auth::check()) return redirect()->route('login');
+
+        $cart = $this->getCart();
+        $cart->items()->delete();
+        return redirect()->back();
+    }
+
+    // ====================================================
+    // 🟢 4. CẬP NHẬT SỐ LƯỢNG (AJAX) - MỚI THÊM
+    // ====================================================
+    public function updateQuantity(Request $request, $id)
+    {
+        if (!Auth::check()) return response()->json(['login' => true]);
+
+        // Tìm item và đảm bảo nó thuộc về user đang đăng nhập
+        $item = CartItem::where('id', $id)
+            ->whereHas('cart', function($q) { 
+                $q->where('user_id', Auth::id()); 
+            })
+            ->first();
+
+        if (!$item) return response()->json(['error' => 'Item not found'], 404);
+
+        // Tính toán số lượng mới
+        $change = (int)$request->change;
+        $newQty = $item->quantity + $change;
+
+        $action = 'update';
+
+        // Nếu giảm xuống < 1 -> Xóa luôn
+        if ($newQty < 1) {
+            $item->delete();
+            $action = 'delete';
+        } else {
+            $item->quantity = $newQty;
+            $item->save();
         }
 
-        return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng');
+        // Tính lại Tổng tiền của cả giỏ hàng để cập nhật giao diện
+        $cartTotal = CartItem::where('cart_id', $item->cart_id)
+            ->get()
+            ->sum(function($t) { return $t->price * $t->quantity; });
+
+        return response()->json([
+            'success'   => true,
+            'action'    => $action,
+            'newQty'    => $newQty,
+            'itemTotal' => number_format($item->price * $newQty), // Thành tiền của món này
+            'cartTotal' => number_format($cartTotal)              // Tổng tiền cả giỏ
+        ]);
     }
+
+    // (Giữ lại các hàm cũ increase/decrease để fallback nếu cần, 
+    // nhưng thực tế ta đã dùng Ajax updateQuantity ở trên rồi)
+    public function increase($id) { return $this->updateQuantity(new Request(['change' => 1]), $id); }
+    public function decrease($id) { return $this->updateQuantity(new Request(['change' => -1]), $id); }
 }

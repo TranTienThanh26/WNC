@@ -4,44 +4,67 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Food;
+use App\Models\Category;
 
 class MenuController extends Controller
 {
-    // 1️⃣ HIỂN THỊ TẤT CẢ MÓN
-    public function index()
-    {
-        // Sử dụng paginate thay vì get() để không bị load quá nhiều món 1 lúc
-        $foods = Food::latest()->paginate(12);
+    /**
+     * 1️⃣ Hiển thị thực đơn & Lọc theo địa chỉ
+     * URL: /menu?address=Hà+Nội
+     */
+    public function index(Request $request)
+{
+    $query = Food::with('category');
 
-       return view('user.menu', compact('foods'));
-       }
+    // 🟢 Lọc chính xác theo cột address trong Database
+    if ($request->filled('address')) {
+        $loc = trim($request->address);
+        $query->where('address', 'LIKE', "%{$loc}%");
     }
 
-    // 2️⃣ LỌC THEO DANH MỤC (Ví dụ: /menu/Fast Food)
-    public function category($category)
-    {
-        $foods = Food::where('category', $category)
-                     ->latest()
-                     ->paginate(12);
+    $foods = $query->latest()->paginate(12);
+    $foods->appends(['address' => $request->address]);
 
-        // Truyền thêm biến $category để view hiển thị tiêu đề "Danh mục: Fast Food"
+    return view('user.menu', compact('foods'));
+}
+
+    /**
+     * 2️⃣ Lọc món theo danh mục (Giữ nguyên và tối ưu)
+     */
+    public function category(Request $request, $slug)
+    {
+        $category = Category::where('slug', $slug)->firstOrFail();
+        $query = Food::with('category')->where('category_id', $category->id);
+
+        // Vẫn cho phép lọc theo địa chỉ ngay cả khi đang ở trong Danh mục
+        if ($request->filled('address')) {
+            $address = trim($request->address);
+            $query->where('description', 'LIKE', "%{$address}%");
+        }
+
+        $foods = $query->latest()->paginate(12);
+        $foods->appends(['address' => $request->address]);
+
         return view('user.menu', compact('foods', 'category'));
     }
 
-    // 3️⃣ TÌM KIẾM MÓN ĂN (Search)
+    /**
+     * 3️⃣ Tìm kiếm món ăn theo từ khóa (Giữ nguyên)
+     */
     public function search(Request $request)
     {
         $keyword = trim($request->keyword);
 
-        if (empty($keyword)) {
+        if (!$keyword) {
             return redirect()->route('menu');
         }
 
-        $foods = Food::where('name', 'LIKE', '%' . $keyword . '%')
-                     ->latest()
-                     ->paginate(12);
+        $foods = Food::with('category')
+            ->where('name', 'LIKE', "%{$keyword}%")
+            ->orWhere('description', 'LIKE', "%{$keyword}%")
+            ->latest()
+            ->paginate(12);
 
-        // withQueryString() giúp giữ lại từ khóa tìm kiếm khi bấm sang trang 2, 3
         $foods->appends(['keyword' => $keyword]);
 
         return view('user.menu', compact('foods', 'keyword'));

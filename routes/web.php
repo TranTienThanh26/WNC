@@ -8,89 +8,81 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FoodController;
-use App\Http\Middleware\AdminMiddleware; // 🟢 Import Middleware Admin
+use App\Http\Middleware\AdminMiddleware;
 
 /*
 |--------------------------------------------------------------------------
-| 1. PUBLIC ROUTES (KHÔNG CẦN ĐĂNG NHẬP)
+| 1. PUBLIC ROUTES (AI CŨNG XEM ĐƯỢC - Mở web là thấy ngay)
 |--------------------------------------------------------------------------
-| Khách vãng lai có thể xem trang chủ, menu, tìm kiếm...
 */
-
-// Trang chủ (Thay vì redirect login, hãy cho họ xem trang chủ)
+// Trang chủ & Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/home', [HomeController::class, 'index']); // Alias cho home
+Route::get('/home', [HomeController::class, 'index']);
 
-// Auth (Đăng nhập/Đăng ký)
-Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-// Menu & Tìm kiếm
+// Menu & Tìm kiếm (Cho phép xem món ăn thoải mái mà không cần login)
 Route::get('/menu', [MenuController::class, 'index'])->name('menu');
-Route::get('/menu/category/{category}', [MenuController::class, 'category'])->name('menu.category');
+Route::get('/menu/category/{slug}', [MenuController::class, 'category'])->name('menu.category');
 Route::get('/search-food', [MenuController::class, 'search'])->name('search.food');
-
-// Chi tiết món ăn (Chỉ xem)
 Route::get('/food/{id}', [FoodController::class, 'show'])->name('food.show');
 
+/*
+|--------------------------------------------------------------------------
+| 2. GUEST ROUTES (CHỈ DÀNH CHO NGƯỜI CHƯA ĐĂNG NHẬP)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
 
 /*
 |--------------------------------------------------------------------------
-| 2. USER ROUTES (PHẢI ĐĂNG NHẬP)
+| 3. PROTECTED ROUTES (BẮT BUỘC ĐĂNG NHẬP - Giỏ hàng & Thanh toán)
 |--------------------------------------------------------------------------
-| Mua hàng, xem giỏ hàng, lịch sử đơn hàng...
 */
 Route::middleware('auth')->group(function () {
+    
+    // --- Logout ---
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // --- Giỏ hàng ---
+    // --- Giỏ hàng (Phải login mới được đặt đồ) ---
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
     Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
-    
-    // Mua ngay (Sử dụng CartController thay vì viết code trực tiếp ở đây)
+    Route::post('/cart/update/{id}', [CartController::class, 'updateQuantity'])->name('cart.update');
     Route::post('/buy-now/{id}', [CartController::class, 'buyNow'])->name('cart.buyNow');
-    
-    // Thao tác giỏ hàng
-    Route::get('/cart/increase/{id}', [CartController::class, 'increase'])->name('cart.increase');
-    Route::get('/cart/decrease/{id}', [CartController::class, 'decrease'])->name('cart.decrease');
     Route::get('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
     Route::get('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
     // --- Thanh toán & Đơn hàng ---
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
-    Route::post('/order', [OrderController::class, 'store'])->name('order.store');
-    
-    // Lịch sử đơn hàng
+    Route::get('/checkout/{id}', [OrderController::class, 'showCheckoutForm'])->name('checkout.show');
+    Route::put('/checkout/{id}', [OrderController::class, 'update'])->name('order.update');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('order.show'); // Sửa tên route cho chuẩn
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('order.show');
 });
-
 
 /*
 |--------------------------------------------------------------------------
-| 3. ADMIN ROUTES (QUẢN TRỊ VIÊN)
+| 4. ADMIN ROUTES (QUẢN TRỊ VIÊN)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', AdminMiddleware::class]) // Sử dụng Class trực tiếp cho an toàn
+Route::middleware(['auth', AdminMiddleware::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         
-    // Dashboard
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
 
-    // Quản lý Món ăn
-    Route::get('/foods', [AdminController::class, 'foodIndex'])->name('foods.index');
-    Route::get('/foods/create', [AdminController::class, 'foodCreate'])->name('foods.create');
-    Route::post('/foods', [AdminController::class, 'foodStore'])->name('foods.store');
-    
-    Route::get('/foods/{id}/edit', [AdminController::class, 'foodEdit'])->name('foods.edit');
-    Route::post('/foods/{id}', [AdminController::class, 'foodUpdate'])->name('foods.update');
-    Route::get('/foods/{id}/delete', [AdminController::class, 'foodDelete'])->name('foods.delete'); // Đổi thành GET cho dễ gọi từ link, hoặc dùng form POST/DELETE
+    Route::prefix('foods')->name('foods.')->group(function () {
+        Route::get('/', [AdminController::class, 'foodIndex'])->name('index');
+        Route::post('/store', [AdminController::class, 'foodStore'])->name('store');
+        Route::get('/{id}/edit', [AdminController::class, 'foodEdit'])->name('edit');
+        Route::post('/update/{id}', [AdminController::class, 'foodUpdate'])->name('update');
+        Route::get('/delete/{id}', [AdminController::class, 'foodDelete'])->name('delete');
+    });
 
-    // Quản lý Đơn hàng
     Route::get('/orders', [AdminController::class, 'orderIndex'])->name('orders.index');
     Route::post('/orders/{id}/status', [AdminController::class, 'orderUpdateStatus'])->name('orders.updateStatus');
 });

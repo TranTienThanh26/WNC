@@ -6,9 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class CartItem extends Model
 {
+    // 🟢 Đã thêm 'price' vào đây
     protected $fillable = [
-        'cart_id', 'food_id', 'quantity', 'price'
+        'cart_id',
+        'food_id',
+        'quantity',
+        'price' 
     ];
+
+    public function cart()
+    {
+        return $this->belongsTo(Cart::class);
+    }
 
     public function food()
     {
