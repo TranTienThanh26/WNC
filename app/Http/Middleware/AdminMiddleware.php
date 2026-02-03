@@ -14,14 +14,15 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Chưa đăng nhập → đá về login
+        // 1. Kiểm tra đã đăng nhập chưa
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        // Đã đăng nhập nhưng không phải admin
+        // 2. Kiểm tra có phải role 'admin' không
+        // Lưu ý: Đảm bảo bảng 'users' của bạn có cột 'role'
         if (Auth::user()->role !== 'admin') {
-            abort(403, 'Bạn không có quyền truy cập trang này');
+            abort(403, '⛔ Bạn không có quyền truy cập trang quản trị!');
         }
 
         return $next($request);

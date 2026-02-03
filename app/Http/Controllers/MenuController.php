@@ -2,46 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Food;
 use Illuminate\Http\Request;
+use App\Models\Food;
 
 class MenuController extends Controller
 {
-    /**
-     * 1️⃣ TRANG MENU - TẤT CẢ MÓN
-     * URL: /menu
-     */
+    // 1️⃣ HIỂN THỊ TẤT CẢ MÓN
     public function index()
     {
-        // Lấy tất cả món ăn, mới nhất hiện lên đầu
-        $foods = Food::orderBy('id', 'desc')->get();
+        // Sử dụng paginate thay vì get() để không bị load quá nhiều món 1 lúc
+        $foods = Food::latest()->paginate(12);
 
         return view('menu', compact('foods'));
     }
 
-    /**
-     * 2️⃣ MENU THEO DANH MỤC
-     * URL: /menu/{category}
-     */
+    // 2️⃣ LỌC THEO DANH MỤC (Ví dụ: /menu/Fast Food)
     public function category($category)
     {
-        /* SỬA TẠI ĐÂY: 
-           Không dùng mảng ['drink', 'fastfood'] vì database của bạn lưu tiếng Việt.
-           Controller sẽ lấy trực tiếp $category từ URL để tìm trong DB.
-        */
-        
         $foods = Food::where('category', $category)
-                     ->orderBy('id', 'desc')
-                     ->get();
+                     ->latest()
+                     ->paginate(12);
 
-        // Trả về view menu với danh sách đã lọc
+        // Truyền thêm biến $category để view hiển thị tiêu đề "Danh mục: Fast Food"
         return view('menu', compact('foods', 'category'));
     }
 
-    /**
-     * 3️⃣ TÌM KIẾM MÓN ĂN
-     * URL: /search-food?keyword=ga
-     */
+    // 3️⃣ TÌM KIẾM MÓN ĂN (Search)
     public function search(Request $request)
     {
         $keyword = trim($request->keyword);
@@ -51,8 +37,11 @@ class MenuController extends Controller
         }
 
         $foods = Food::where('name', 'LIKE', '%' . $keyword . '%')
-                     ->orderBy('id', 'desc')
-                     ->get();
+                     ->latest()
+                     ->paginate(12);
+
+        // withQueryString() giúp giữ lại từ khóa tìm kiếm khi bấm sang trang 2, 3
+        $foods->appends(['keyword' => $keyword]);
 
         return view('menu', compact('foods', 'keyword'));
     }
