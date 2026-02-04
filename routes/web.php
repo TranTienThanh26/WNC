@@ -15,11 +15,9 @@ use App\Http\Middleware\AdminMiddleware;
 | 1. PUBLIC ROUTES (AI CŨNG XEM ĐƯỢC - Mở web là thấy ngay)
 |--------------------------------------------------------------------------
 */
-// Trang chủ & Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home', [HomeController::class, 'index']);
 
-// Menu & Tìm kiếm (Cho phép xem món ăn thoải mái mà không cần login)
 Route::get('/menu', [MenuController::class, 'index'])->name('menu');
 Route::get('/menu/category/{slug}', [MenuController::class, 'category'])->name('menu.category');
 Route::get('/search-food', [MenuController::class, 'search'])->name('search.food');
@@ -39,15 +37,15 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| 3. PROTECTED ROUTES (BẮT BUỘC ĐĂNG NHẬP - Giỏ hàng & Thanh toán)
+| 3. PROTECTED ROUTES (BẮT BUỘC ĐĂNG NHẬP)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
     
-    // --- Logout ---
+    // --- Auth ---
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // --- Giỏ hàng (Phải login mới được đặt đồ) ---
+    // --- Giỏ hàng ---
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
     Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
     Route::post('/cart/update/{id}', [CartController::class, 'updateQuantity'])->name('cart.update');
@@ -59,8 +57,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::get('/checkout/{id}', [OrderController::class, 'showCheckoutForm'])->name('checkout.show');
     Route::put('/checkout/{id}', [OrderController::class, 'update'])->name('order.update');
+    
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('order.show');
+    
+    // 👇 TUYẾN ĐƯỜNG MỚI: Hủy đơn hàng
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('order.cancel');
 });
 
 /*

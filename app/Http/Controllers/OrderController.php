@@ -22,7 +22,6 @@ class OrderController extends Controller
             $itemsToOrder = [];
             $total = 0;
 
-            // 1. Lấy dữ liệu (Từ Mua ngay hoặc Giỏ hàng)
             if (session()->has('buy_now_item')) {
                 $itemData = session('buy_now_item');
                 $food = Food::find($itemData['id']);
@@ -50,17 +49,15 @@ class OrderController extends Controller
                 }
             }
 
-            // 2. TẠO ĐƠN HÀNG "NHÁP" (Trạng thái: Chưa thanh toán)
             $order = Order::create([
                 'user_id'       => Auth::id(),
                 'customer_name' => Auth::user()->name,
                 'phone'         => Auth::user()->phone ?? '',
-                'address'       => $request->address ?? '', // Địa chỉ tạm thời nếu có
+                'address'       => $request->address ?? '',
                 'total_price'   => $total,
-                'status'        => 'Chưa thanh toán', // 🟢 Trạng thái khởi tạo
+                'status'        => 'Chưa thanh toán',
             ]);
 
-            // 3. Lưu chi tiết món ăn
             foreach ($itemsToOrder as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -70,7 +67,6 @@ class OrderController extends Controller
                 ]);
             }
 
-            // 4. Dọn dẹp (Xóa giỏ hàng hoặc session mua ngay vì đã chuyển vào Order)
             if (session()->has('buy_now_item')) {
                 session()->forget('buy_now_item');
             } else {
@@ -79,8 +75,6 @@ class OrderController extends Controller
             }
 
             DB::commit();
-
-            // Chuyển hướng sang trang xác nhận thông tin kèm theo ID đơn hàng
             return redirect()->route('checkout.show', $order->id);
 
         } catch (\Exception $e) {
@@ -89,24 +83,15 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Bước 2: Hiển thị trang nhập thông tin cho đơn hàng đã tạo
-     */
     public function showCheckoutForm($id)
     {
         $order = Order::with('items.food')->where('id', $id)->where('user_id', Auth::id())->firstOrFail();
-        
-        // Nếu đơn hàng đã hoàn thành rồi thì không cho quay lại trang nhập thông tin nữa
         if($order->status != 'Chưa thanh toán') {
             return redirect()->route('orders');
         }
-
         return view('user.checkout', compact('order'));
     }
 
-    /**
-     * Bước 3: Khách bấm "Xác nhận" -> Cập nhật thông tin và đổi trạng thái đơn
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -122,10 +107,29 @@ class OrderController extends Controller
             'phone'         => $request->phone,
             'address'       => $request->address,
             'note'          => $request->note,
-            'status'        => 'Chờ xác nhận', // 🟢 Đổi trạng thái sau khi khách bấm xác nhận
+            'status'        => 'Chờ xác nhận',
         ]);
 
         return redirect()->route('orders')->with('success', '🎉 Đặt hàng thành công!');
+    }
+
+    /**
+     * 👇 HÀM MỚI: Xử lý hủy đơn hàng dành cho khách hàng
+     */
+    public function cancel($id)
+    {
+        // Tìm đơn hàng của đúng User đang đăng nhập
+        $order = Order::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+
+        // Danh sách các trạng thái được phép hủy (tùy biến theo logic của bạn)
+        $allowCancel = ['chờ xác nhận', 'chưa thanh toán', 'pending'];
+
+        if (in_array(strtolower($order->status), $allowCancel)) {
+            $order->update(['status' => 'Đã hủy']);
+            return back()->with('success', 'Đã hủy đơn hàng thành công.');
+        }
+
+        return back()->with('error', 'Không thể hủy đơn hàng vì đơn đang được xử lý hoặc đã hoàn thành.');
     }
 
     public function index()

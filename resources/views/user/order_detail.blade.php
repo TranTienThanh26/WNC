@@ -49,7 +49,7 @@
 
         /* --- 3. CONTAINER & BREADCRUMB --- */
         .container { max-width: 1100px; margin: 40px auto; padding: 0 5%; }
-        .breadcrumb { margin-bottom: 30px; color: var(--text-light); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .breadcrumb { margin-bottom: 30px; color: var(--text-light); font-size: 11px; text-transform: uppercase; letter-spacing: 2px; }
         .breadcrumb a:hover { color: var(--gold); }
 
         /* ORDER BOX */
@@ -64,7 +64,6 @@
         .status-info { display: flex; align-items: center; gap: 15px; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; }
         
-        /* Màu trạng thái đồng bộ nhẹ nhàng */
         .bg-pending { background-color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.4); }
         .bg-shipping { background-color: #3498db; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
         .bg-success { background-color: #2ecc71; box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
@@ -89,7 +88,7 @@
         /* INFO SECTION */
         .info-group { margin-bottom: 35px; }
         .info-title { 
-            font-size: 12px; font-weight: 700; margin-bottom: 20px; 
+            font-size: 11px; font-weight: 700; margin-bottom: 20px; 
             display: flex; align-items: center; gap: 10px; color: var(--text-main);
             text-transform: uppercase; letter-spacing: 2px; border-left: 3px solid var(--gold); padding-left: 15px;
         }
@@ -101,20 +100,31 @@
         .total-row span:first-child { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
         .total-row span:last-child { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--text-main); }
 
-        /* QR CODE PREMIUM */
-        .qr-card { background: white; padding: 25px; border-radius: 4px; text-align: center; border: 1px solid #eee; margin-top: 30px; }
+        /* --- KHỐI THANH TOÁN --- */
+        .payment-action-box { margin-top: 30px; }
+
+        .btn-pay-now {
+            display: block; width: 100%; padding: 16px; background: var(--text-main); color: var(--gold);
+            text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+            font-size: 12px; border-radius: var(--radius); border: 1px solid var(--gold);
+            transition: 0.4s; cursor: pointer;
+        }
+        .btn-pay-now:hover { background: #000; color: #fff; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+        .payment-notice { font-size: 11px; color: var(--text-light); font-style: italic; margin-top: 12px; display: block; text-align: center; }
+
+        .qr-card { background: white; padding: 25px; border-radius: 4px; text-align: center; border: 1px solid #eee; }
         .qr-card img { width: 130px; margin-bottom: 15px; filter: contrast(1.1); }
         .qr-card p { font-size: 12px; color: var(--text-light); line-height: 1.6; }
 
         /* ACTIONS */
         .actions-footer { padding: 25px 40px; background: #fafafa; text-align: left; border-top: 1px solid #f0f0f0; }
         .btn-return { 
-            font-size: 12px; font-weight: 700; color: var(--text-main); 
+            font-size: 11px; font-weight: 700; color: var(--text-main); 
             text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px;
         }
         .btn-return:hover { color: var(--gold); }
 
-        /* RESPONSIVE */
         @media (max-width: 900px) {
             .order-content { grid-template-columns: 1fr; }
             .col-items { border-right: none; border-bottom: 1px solid #f0f0f0; }
@@ -139,17 +149,16 @@
         <span>Chi tiết đơn #{{ $order->id }}</span>
     </div>
 
-    {{-- PHÂN LOẠI TRẠNG THÁI --}}
     @php
         $st = strtolower($order->status);
         if(in_array($st, ['đang giao', 'shipping', 'đang chuẩn bị'])) {
-            $dotClass = 'bg-shipping'; $icon = 'fa-concierge-bell';
+            $dotClass = 'bg-shipping'; 
         } elseif(in_array($st, ['hoàn thành', 'completed', 'đã giao hàng'])) {
-            $dotClass = 'bg-success'; $icon = 'fa-check';
+            $dotClass = 'bg-success';
         } elseif(in_array($st, ['đã hủy', 'cancelled', 'từ chối'])) {
-            $dotClass = 'bg-cancel'; $icon = 'fa-times';
+            $dotClass = 'bg-cancel';
         } else {
-            $dotClass = 'bg-pending'; $icon = 'fa-receipt';
+            $dotClass = 'bg-pending';
         }
     @endphp
 
@@ -165,15 +174,17 @@
         </div>
 
         <div class="order-content">
-            {{-- DANH SÁCH MÓN ĂN --}}
             <div class="col-items">
                 <h4 class="serif" style="font-size: 22px; margin-bottom: 30px;">Thực Đơn Đã Chọn</h4>
                 
                 @foreach($order->items as $item)
                 <div class="item-row">
-                    <img src="{{ $item->food->image 
-                        ? (Str::startsWith($item->food->image, 'foods/') ? asset($item->food->image) : asset('storage/'.$item->food->image)) 
-                        : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=150&auto=format&fit=crop' }}" class="item-img">
+                    @php
+                        $img = $item->food->image;
+                        $url = $img ? (Str::startsWith($img, 'foods/') ? asset($img) : asset('storage/'.$img)) 
+                                   : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=150';
+                    @endphp
+                    <img src="{{ $url }}" class="item-img" onerror="this.src='https://placehold.co/150x150?text=Food'">
                     
                     <div class="item-details">
                         <h4>{{ $item->food->name ?? 'Món Signature' }}</h4>
@@ -187,19 +198,18 @@
                 @endforeach
             </div>
 
-            {{-- THÔNG TIN CHI TIẾT --}}
             <div class="col-info">
                 <div class="info-group">
                     <div class="info-title">Địa điểm giao dịch</div>
                     <div class="info-row">
-                        <span>Quý khách:</span> <strong>{{ $order->customer_name }}</strong>
+                        <span>Quý khách:</span> <strong>{{ $order->customer_name ?: 'Khách hàng TTD' }}</strong>
                     </div>
                     <div class="info-row">
-                        <span>Liên hệ:</span> <strong>{{ $order->phone }}</strong>
+                        <span>Liên hệ:</span> <strong>{{ $order->phone ?: '---' }}</strong>
                     </div>
                     <div class="info-row" style="flex-direction: column; gap: 5px;">
                         <span>Địa chỉ:</span>
-                        <strong style="font-size: 13px; line-height: 1.5;">{{ $order->address }}</strong>
+                        <strong style="font-size: 13px; line-height: 1.5;">{{ $order->address ?: 'Vui lòng bổ sung địa chỉ' }}</strong>
                     </div>
                 </div>
 
@@ -207,9 +217,6 @@
                     <div class="info-title">Giá trị đơn hàng</div>
                     <div class="info-row">
                         <span>Giá trị thực đơn:</span> <span>{{ number_format($order->total_price) }} đ</span>
-                    </div>
-                    <div class="info-row">
-                        <span>Phí phục vụ:</span> <span>0 đ</span>
                     </div>
                     <div class="total-box">
                         <div class="total-row">
@@ -219,13 +226,20 @@
                     </div>
                 </div>
 
-                {{-- QR THANH TOÁN (Nếu đơn đang chờ) --}}
-                @if($dotClass == 'bg-pending')
-                    <div class="qr-card">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TTDSIGNATURE_{{ $order->id }}" alt="QR Payment">
-                        <p>Vui lòng quét mã để hoàn tất <br> <b>thanh toán đơn hàng</b></p>
-                    </div>
-                @endif
+                {{-- KHỐI HÀNH ĐỘNG THANH TOÁN --}}
+                <div class="payment-action-box">
+                    @if($order->status == 'Chưa thanh toán')
+                        <a href="{{ route('checkout.show', $order->id) }}" class="btn-pay-now">
+                            <i class="fas fa-credit-card"></i> Thanh toán & Xác nhận ngay
+                        </a>
+                        <span class="payment-notice serif">Hoàn tất thông tin để chúng tôi phục vụ bạn tốt nhất.</span>
+                    @elseif($dotClass == 'bg-pending')
+                        <div class="qr-card">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TTDSIGNATURE_{{ $order->id }}" alt="QR Payment">
+                            <p>Quét mã để hoàn tất <br> <b>chuyển khoản thanh toán</b></p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
 

@@ -103,13 +103,22 @@
         .status-success { background: #f0fff4; color: #276749; border: 1px solid #f0fff4; }
         .status-cancel { background: #fff5f5; color: #c53030; border: 1px solid #fff5f5; }
 
-        /* BUTTON */
+        /* BUTTONS */
+        .card-actions { display: flex; align-items: center; gap: 10px; }
+
         .btn-detail { 
             padding: 10px 20px; border: 1px solid var(--text-main); color: var(--text-main); 
             border-radius: var(--radius); font-weight: 700; font-size: 12px; 
             text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; 
         }
         .btn-detail:hover { background: var(--text-main); color: var(--gold); }
+
+        .btn-cancel {
+            padding: 10px 20px; background: transparent; border: 1px solid #eee; color: #999;
+            border-radius: var(--radius); font-weight: 700; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-cancel:hover { border-color: #c53030; color: #c53030; background: #fff5f5; }
 
         .btn-home { 
             display: block; width: fit-content; margin: 50px auto 0; color: var(--text-light); 
@@ -119,12 +128,7 @@
 
         @media (max-width: 850px) {
             .card-body { grid-template-columns: 1fr 1fr; }
-            .btn-detail { grid-column: span 2; text-align: center; }
-        }
-        @media (max-width: 500px) {
-            .card-body { grid-template-columns: 1fr; text-align: center; }
-            .info-group, .btn-detail { grid-column: span 1; }
-            .card-header { flex-direction: column; text-align: center; gap: 15px; }
+            .card-actions { grid-column: span 2; justify-content: center; }
         }
     </style>
 </head>
@@ -145,25 +149,21 @@
 <div class="container">
     <h2 class="page-title">Lịch sử <span>đặt món</span></h2>
 
-    {{-- TRƯỜNG HỢP CHƯA CÓ ĐƠN --}}
     @if($orders->count() == 0)
         <div class="empty-box">
             <i class="fas fa-concierge-bell"></i>
             <p>Quý khách chưa thực hiện đơn đặt hàng nào.</p>
-            <a href="{{ route('menu') }}" class="btn-go-menu">
-                Khám phá thực đơn
-            </a>
+            <a href="{{ route('menu') }}" class="btn-go-menu">Khám phá thực đơn</a>
         </div>
     @else
 
-    {{-- DANH SÁCH ĐƠN --}}
     <div class="orders-list">
         @foreach($orders as $order)
             @php
                 $statusClass = 'status-pending';
                 $icon = 'fa-receipt';
-                
                 $st = strtolower($order->status);
+                
                 if(in_array($st, ['đang giao', 'shipping', 'đang chuẩn bị'])) {
                     $statusClass = 'status-shipping'; $icon = 'fa-concierge-bell';
                 } elseif(in_array($st, ['hoàn thành', 'completed', 'đã giao hàng'])) {
@@ -174,12 +174,11 @@
             @endphp
 
             <div class="order-card">
-                {{-- HEADER CARD --}}
                 <div class="card-header">
                     <div>
                         <span class="order-id">Mã đơn #{{ $order->id }}</span>
                         <div class="order-date">
-                            <i class="far fa-calendar-alt"></i> {{ $order->created_at->format('d/m/Y') }} <span style="margin: 0 5px">•</span> {{ $order->created_at->format('H:i') }}
+                            <i class="far fa-calendar-alt"></i> {{ $order->created_at->format('d/m/Y') }} • {{ $order->created_at->format('H:i') }}
                         </div>
                     </div>
                     <span class="status-badge {{ $statusClass }}">
@@ -187,7 +186,6 @@
                     </span>
                 </div>
 
-                {{-- BODY CARD --}}
                 <div class="card-body">
                     <div class="info-group">
                         <div class="info-label">Quý khách</div>
@@ -203,13 +201,19 @@
 
                     <div class="info-group">
                         <div class="info-label">Giá trị trải nghiệm</div>
-                        <div class="info-value total-price">{{ number_format($order->total_price) }} <small style="font-size: 12px;">đ</small></div>
+                        <div class="info-value total-price">{{ number_format($order->total_price) }} <small>đ</small></div>
                     </div>
 
-                    <div>
-                        <a href="{{ route('order.show', $order->id) }}" class="btn-detail">
-                            Chi tiết
-                        </a>
+                    <div class="card-actions">
+                        {{-- CHỈ HIỆN NÚT HỦY KHI ĐƠN ĐANG CHỜ --}}
+                        @if(in_array($st, ['chờ xác nhận', 'pending']))
+                            <form action="{{ route('order.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Quý khách chắc chắn muốn hủy đơn hàng này?')">
+                                @csrf
+                                <button type="submit" class="btn-cancel">Hủy đơn</button>
+                            </form>
+                        @endif
+
+                        <a href="{{ route('order.show', $order->id) }}" class="btn-detail">Chi tiết</a>
                     </div>
                 </div>
             </div>
