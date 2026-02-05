@@ -80,10 +80,10 @@
         /* ITEMS LIST */
         .item-row { display: flex; gap: 20px; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid #f8f8f8; align-items: center; }
         .item-row:last-child { border-bottom: none; margin-bottom: 0; }
-        .item-img { width: 80px; height: 80px; border-radius: 2px; object-fit: cover; background: #f9f9f9; }
+        .item-img { width: 85px; height: 85px; border-radius: 2px; object-fit: cover; background: #f9f9f9; border: 1px solid #eee; }
         .item-details h4 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 5px; color: var(--text-main); }
         .item-details p { font-size: 13px; color: var(--text-light); }
-        .item-price { margin-left: auto; font-weight: 600; color: var(--gold); font-size: 15px; }
+        .item-price { margin-left: auto; font-weight: 700; color: var(--gold); font-size: 16px; }
 
         /* INFO SECTION */
         .info-group { margin-bottom: 35px; }
@@ -180,11 +180,18 @@
                 @foreach($order->items as $item)
                 <div class="item-row">
                     @php
-                        $img = $item->food->image;
-                        $url = $img ? (Str::startsWith($img, 'foods/') ? asset($img) : asset('storage/'.$img)) 
-                                   : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=150';
+                        // ĐỒNG BỘ LOGIC ẢNH: Trỏ vào public/foods
+                        $img = $item->food->image ?? '';
+                        if ($img && Str::startsWith($img, 'http')) {
+                            $dImg = $img;
+                        } elseif ($img) {
+                            $cleanName = str_replace('foods/', '', $img);
+                            $dImg = asset('foods/' . $cleanName);
+                        } else {
+                            $dImg = asset('foods/default.jpg');
+                        }
                     @endphp
-                    <img src="{{ $url }}" class="item-img" onerror="this.src='https://placehold.co/150x150?text=Food'">
+                    <img src="{{ $dImg }}" class="item-img" onerror="this.src='https://placehold.co/150x150?text=Signature'">
                     
                     <div class="item-details">
                         <h4>{{ $item->food->name ?? 'Món Signature' }}</h4>
